@@ -1,30 +1,116 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:digi_bills/main.dart';
+import 'package:digi_bills/core/responsive/breakpoints.dart';
+import 'package:digi_bills/core/responsive/max_width_container.dart';
+import 'package:digi_bills/core/responsive/responsive_builder.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const DigiBillsApp());
+  group('Multi-Device Responsive Breakpoints Tests', () {
+    testWidgets('Detects Compact Phone screen correctly (< 600dp)', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      bool? isCompactResult;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              isCompactResult = context.isCompact;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(isCompactResult, isTrue);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('Detects Tablet screen correctly (600 - 1024dp)', (tester) async {
+      tester.view.physicalSize = const Size(768, 1024);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      bool? isMediumResult;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              isMediumResult = context.isMedium;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(isMediumResult, isTrue);
+    });
+
+    testWidgets('Detects Laptop/Desktop screen correctly (1024 - 1440dp)', (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      bool? isExpandedResult;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              isExpandedResult = context.isExpanded;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(isExpandedResult, isTrue);
+    });
+
+    testWidgets('Detects 4K / Touchscreen Smartboard screen correctly (>= 1440dp)', (tester) async {
+      tester.view.physicalSize = const Size(2560, 1440);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      bool? isLargeResult;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              isLargeResult = context.isLarge;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      expect(isLargeResult, isTrue);
+    });
+
+    testWidgets('MaxWidthContainer correctly clamps content on wide screens', (tester) async {
+      tester.view.physicalSize = const Size(2560, 1440);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: MaxWidthContainer(
+              maxWidth: 1200,
+              child: Text('Clamped Content'),
+            ),
+          ),
+        ),
+      );
+
+      final constrainedBoxFinder = find.descendant(
+        of: find.byType(MaxWidthContainer),
+        matching: find.byType(ConstrainedBox),
+      );
+      expect(constrainedBoxFinder, findsOneWidget);
+
+      final ConstrainedBox box = tester.widget(constrainedBoxFinder);
+      expect(box.constraints.maxWidth, equals(1200.0));
+      expect(find.text('Clamped Content'), findsOneWidget);
+    });
   });
 }
