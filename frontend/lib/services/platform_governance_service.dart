@@ -7,23 +7,38 @@ class PlatformGovernanceService {
 
   // Stream for real-time config updates (Announcement/Maintenance)
   Stream<PlatformConfigModel> streamConfig() {
-    return _supabase
-        .from('platform_config')
-        .stream(primaryKey: ['id'])
-        .eq('id', 1)
-        .map((data) {
-          if (data.isEmpty) {
-            // Return a default model if no data exists yet
-            return PlatformConfigModel(
-              maintenanceMode: false,
-              announcementType: 'info',
-              maintenanceMessage: 'System is under maintenance.',
-              minAppVersion: '1.0.0',
-              updatedAt: DateTime.now(),
-            );
-          }
-          return PlatformConfigModel.fromMap(data.first);
-        });
+    try {
+      return _supabase
+          .from('platform_config')
+          .stream(primaryKey: ['id'])
+          .eq('id', 1)
+          .map((data) {
+            if (data.isEmpty) {
+              return PlatformConfigModel(
+                maintenanceMode: false,
+                announcementType: 'info',
+                maintenanceMessage: 'System is under maintenance.',
+                minAppVersion: '1.0.0',
+                updatedAt: DateTime.now(),
+              );
+            }
+            return PlatformConfigModel.fromMap(data.first);
+          }).handleError((_) => PlatformConfigModel(
+                maintenanceMode: false,
+                announcementType: 'info',
+                maintenanceMessage: 'System is under maintenance.',
+                minAppVersion: '1.0.0',
+                updatedAt: DateTime.now(),
+              ));
+    } catch (_) {
+      return Stream.value(PlatformConfigModel(
+        maintenanceMode: false,
+        announcementType: 'info',
+        maintenanceMessage: 'System is under maintenance.',
+        minAppVersion: '1.0.0',
+        updatedAt: DateTime.now(),
+      ));
+    }
   }
 
   // Fetch current config

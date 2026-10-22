@@ -189,9 +189,6 @@ class DigiBillsApp extends StatelessWidget {
               body: Center(child: Text('Authentication Error: ${snapshot.error}')),
             );
           }
-          if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
           final user = snapshot.data;
           if (user != null) return UserRoleGate(user: user);
           return const LoginScreen();
