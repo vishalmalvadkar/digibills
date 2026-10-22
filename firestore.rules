@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user has active license
+    function hasActiveLicense() {
+      // Fetch the user document. 
+      // Note: In production, consider custom claims to avoid extra reads, 
+      // but for this task we read the doc.
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      // Check if license exists and is active
+      // Logic mirrors LicenseService: Default (missing) is valid? 
+      // Or strict? 
+      // User Req 10: "if license expire then app must work only readonly mode"
+      // So checks: userDoc.data.license.isActive == true && userDoc.data.license.endDate > request.time
+      
+      // Handle missing license case (legacy/fallback -> Valid)
+      let hasNoLicense = !("license" in userDoc.data) || userDoc.data.license == null;
+      let isLicenseActive = userDoc.data.license.isActive == true;
+      let isNotExpired = userDoc.data.license.endDate > request.time;
+      
+      return hasNoLicense || (isLicenseActive && isNotExpired);
+    }
+    
+    // USERS COLLECTION
+    // Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // BILLS COLLECTION
+    match /bills/{billId} {
+      allow get: if true; // Public access for sharing links
+      allow list: if request.auth != null && resource.data.tenantId == request.auth.uid; // Only list own
+      
+      // Write requires Active License
+      // Write requires Active License
+      allow delete: if request.auth != null 
+                    && resource.data.tenantId == request.auth.uid // Only delete if you own it
+                    && hasActiveLicense();
+      
+      allow create, update: if request.auth != null 
+                    && (resource == null || resource.data.tenantId == request.auth.uid) // Check ownership of existing (if updating)
+                    && (request.resource.data.tenantId == request.auth.uid) // Check new data ownership
+                    && hasActiveLicense();
+    }
+    // QUOTATIONS COLLECTION
+    match /quotations/{quoteId} {
+      allow get: if true; // Public access for sharing links
+      allow list: if request.auth != null && resource.data.tenantId == request.auth.uid;
+      
+      allow delete: if request.auth != null 
+                    && resource.data.tenantId == request.auth.uid
+                    && hasActiveLicense();
+      
+      allow create, update: if request.auth != null 
+                    && (resource == null || resource.data.tenantId == request.auth.uid)
+                    && (request.resource.data.tenantId == request.auth.uid)
+                    && hasActiveLicense();
+    }
+
+    // EXPENSES COLLECTION
+    match /expenses/{expenseId} {
+      allow read: if request.auth != null && resource.data.tenantId == request.auth.uid;
+      allow write: if request.auth != null 
+                   && hasActiveLicense();
+    }
+    
+    // INCOME LEDGER
+    match /income_ledger/{docId} {
+        allow read: if request.auth != null && resource.data.tenantId == request.auth.uid;
+        allow write: if request.auth != null && hasActiveLicense();
+    }
+    
+    // SETTINGS
+    match /settings/{userId} {
+        allow get: if true; // Public access to render invoice headers
+        allow list, write: if request.auth != null && request.auth.uid == userId; 
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
