@@ -38,6 +38,8 @@ import '../models/platform_config_model.dart'; // NEW
 import '../services/platform_governance_service.dart'; // RESTORED
 import '../providers/shell_provider.dart'; // NEW
 import '../utils/responsive.dart';
+import '../core/responsive/breakpoints.dart';
+import '../core/responsive/max_width_container.dart';
 import '../l10n/app_localizations.dart'; // NEW
 
 import '../services/auth_service.dart';
@@ -346,109 +348,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                         // 2. Shortcuts (Create Invoice, Sales Return) - Moved Up
                         if (!LicenseScope.isReadOnlyMode(context)) ...[
-                          Responsive(
-                            mobile: Row(
-                              children: [
-                                if (_currentUser?.role != 'staff' || (_currentUser?.permissions.contains('create_bills') ?? false))
-                                  _buildShortcutCard(
-                                    context,
-                                    title: AppLocalizations.of(context)?.createInvoice ?? 'Create Invoice',
-                                    icon: Icons.add_circle_outline,
-                                    color1: const Color(0xFF11998e),
-                                    color2: const Color(0xFF38ef7d),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context, 
-                                        MaterialPageRoute(builder: (_) => const CreateBillScreen())
-                                      ).then((_) => _loadAllData());
-                                    },
-                                  )
-                                else
-                                  const Expanded(child: SizedBox()),
-                                const SizedBox(width: 12),
-                                _buildShortcutCard(
-                                  context,
-                                  title: 'Purchase',
-                                  icon: Icons.shopping_cart_outlined,
-                                  color1: const Color(0xFF614385),
-                                  color2: const Color(0xFF516395),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context, 
-                                      MaterialPageRoute(builder: (_) => const CreatePurchaseScreen())
-                                    ).then((_) => _loadAllData());
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                if (_currentUser?.role != 'staff' || (_currentUser?.permissions.contains('manage_returns') ?? false))
-                                  _buildShortcutCard(
-                                    context,
-                                    title: AppLocalizations.of(context)?.salesReturn ?? 'Sales Return',
-                                    icon: Icons.assignment_return_outlined,
-                                    color1: const Color(0xFFFF416C),
-                                    color2: const Color(0xFFFF4B2B),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context, 
-                                        MaterialPageRoute(builder: (_) => const BillsScreen(initialIndex: 3))
-                                      );
-                                    },
-                                  )
-                                else
-                                  const Expanded(child: SizedBox()),
-                              ],
-                            ),
-                            desktop: Row(
-                              children: [
-                                if (_currentUser?.role != 'staff' || (_currentUser?.permissions.contains('create_bills') ?? false))
-                                  _buildShortcutCard(
-                                    context,
-                                    title: 'Create Invoice',
-                                    icon: Icons.add_circle_outline,
-                                    color1: const Color(0xFF11998e),
-                                    color2: const Color(0xFF38ef7d),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context, 
-                                        MaterialPageRoute(builder: (_) => const CreateBillScreen())
-                                      ).then((_) => _loadAllData());
-                                    },
-                                  )
-                                else
-                                  const Expanded(child: SizedBox()),
-                                const SizedBox(width: 16),
-                                _buildShortcutCard(
-                                  context,
-                                  title: 'Purchase',
-                                  icon: Icons.shopping_cart_outlined,
-                                  color1: const Color(0xFF614385),
-                                  color2: const Color(0xFF516395),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context, 
-                                      MaterialPageRoute(builder: (_) => const CreatePurchaseScreen())
-                                    ).then((_) => _loadAllData());
-                                  },
-                                ),
-                                const SizedBox(width: 16),
-                                if (_currentUser?.role != 'staff' || (_currentUser?.permissions.contains('manage_returns') ?? false))
-                                  _buildShortcutCard(
-                                    context,
-                                    title: 'Sales Return',
-                                    icon: Icons.assignment_return_outlined,
-                                    color1: const Color(0xFFFF416C),
-                                    color2: const Color(0xFFFF4B2B),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context, 
-                                        MaterialPageRoute(builder: (_) => const BillsScreen(initialIndex: 3))
-                                      );
-                                    },
-                                  )
-                                else
-                                  const Expanded(child: SizedBox()),
-                              ],
-                            ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final canCreateBills = _currentUser?.role != 'staff' || (_currentUser?.permissions.contains('create_bills') ?? false);
+                              final canManageReturns = _currentUser?.role != 'staff' || (_currentUser?.permissions.contains('manage_returns') ?? false);
+                              final isSmall = constraints.maxWidth < 420;
+
+                              final invoiceCard = canCreateBills
+                                  ? _buildShortcutCard(
+                                      context,
+                                      title: AppLocalizations.of(context)?.createInvoice ?? 'Create Invoice',
+                                      icon: Icons.add_circle_outline,
+                                      color1: const Color(0xFF11998e),
+                                      color2: const Color(0xFF38ef7d),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context, 
+                                          MaterialPageRoute(builder: (_) => const CreateBillScreen())
+                                        ).then((_) => _loadAllData());
+                                      },
+                                    )
+                                  : null;
+
+                              final purchaseCard = _buildShortcutCard(
+                                context,
+                                title: 'Purchase',
+                                icon: Icons.shopping_cart_outlined,
+                                color1: const Color(0xFF614385),
+                                color2: const Color(0xFF516395),
+                                onTap: () {
+                                  Navigator.push(
+                                    context, 
+                                    MaterialPageRoute(builder: (_) => const CreatePurchaseScreen())
+                                  ).then((_) => _loadAllData());
+                                },
+                              );
+
+                              final returnCard = canManageReturns
+                                  ? _buildShortcutCard(
+                                      context,
+                                      title: AppLocalizations.of(context)?.salesReturn ?? 'Sales Return',
+                                      icon: Icons.assignment_return_outlined,
+                                      color1: const Color(0xFFFF416C),
+                                      color2: const Color(0xFFFF4B2B),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context, 
+                                          MaterialPageRoute(builder: (_) => const BillsScreen(initialIndex: 3))
+                                        );
+                                      },
+                                    )
+                                  : null;
+
+                              final activeCards = [
+                                if (invoiceCard != null) invoiceCard,
+                                purchaseCard,
+                                if (returnCard != null) returnCard,
+                              ];
+
+                              if (isSmall) {
+                                return Column(
+                                  children: [
+                                    for (int i = 0; i < activeCards.length; i++) ...[
+                                      Row(children: [activeCards[i]]),
+                                      if (i < activeCards.length - 1) const SizedBox(height: 10),
+                                    ],
+                                  ],
+                                );
+                              }
+
+                              return Row(
+                                children: [
+                                  for (int i = 0; i < activeCards.length; i++) ...[
+                                    activeCards[i],
+                                    if (i < activeCards.length - 1) const SizedBox(width: 12),
+                                  ],
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(height: 32),
                         ],
@@ -868,27 +845,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _summaryCards(BuildContext context, DashboardSummary summary) {
-    if (Responsive.isMobile(context)) {
-      return Row(
-        children: [
-          _card(AppLocalizations.of(context)?.totalRevenue ?? 'Total', summary.totalAmount, summary.totalBills, AppColors.primary),
-          const SizedBox(width: 12),
-          _card(AppLocalizations.of(context)?.paidCollections ?? 'Paid', summary.paidAmount, summary.paidCount, AppColors.success),
-          const SizedBox(width: 12),
-          _card(AppLocalizations.of(context)?.pendingDues ?? 'Pending', summary.pendingAmount, summary.pendingCount, AppColors.warning),
-        ],
-      );
-    } else {
-      return Row(
-        children: [
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        // On very compact mobile screens (< 380px), stack into a 1 or 2-column wrap
+        // On standard screens, arrange in 3 columns
+        final isVeryCompact = width < 380;
+
+        final cards = [
           _card(AppLocalizations.of(context)?.totalRevenue ?? 'Total Revenue', summary.totalAmount, summary.totalBills, AppColors.primary),
-          const SizedBox(width: 16),
           _card(AppLocalizations.of(context)?.paidCollections ?? 'Paid Collections', summary.paidAmount, summary.paidCount, AppColors.success),
-          const SizedBox(width: 16),
           _card(AppLocalizations.of(context)?.pendingDues ?? 'Pending Dues', summary.pendingAmount, summary.pendingCount, AppColors.warning),
-        ],
-      );
-    }
+        ];
+
+        if (isVeryCompact) {
+          return Column(
+            children: [
+              cards[0],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  cards[1],
+                  const SizedBox(width: 12),
+                  cards[2],
+                ],
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            cards[0],
+            const SizedBox(width: 12),
+            cards[1],
+            const SizedBox(width: 12),
+            cards[2],
+          ],
+        );
+      },
+    );
   }
 
   Widget _card(String title, double value, int count, Color color) {
