@@ -453,7 +453,9 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
                      const SizedBox(height: 16),
 
                      // SHIPPED TO SECTION
-                     SwitchListTile(
+                     Material(
+                       color: Colors.transparent,
+                       child: SwitchListTile(
                         title: const Text('Ship to different address?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         value: _shipToDifferentAddress,
                         onChanged: (val) {
@@ -470,7 +472,8 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
                         },
                         activeColor: AppColors.primary,
                         contentPadding: EdgeInsets.zero,
-                      ),
+                       ),
+                     ),
                       
                       if (_shipToDifferentAddress) ...[
                          const SizedBox(height: 8),

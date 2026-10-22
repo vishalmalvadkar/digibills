@@ -17,37 +17,39 @@ class PwaUpdateService {
     if (!kIsWeb) return;
 
     try {
-      // Check if serviceWorker is supported
+      // Check if serviceWorker is supported and active in browser
       final sw = html.window.navigator.serviceWorker;
       if (sw == null) return;
 
-      sw.getRegistration().then((dynamic registration) {
-        if (registration != null && registration is html.ServiceWorkerRegistration) {
-          // 1. Check if there's already a waiting worker
-          if (registration.waiting != null) {
-            _waitingWorker = registration.waiting;
-            updateAvailable.value = true;
-          }
-
-          // 2. Listen for new updates
-          registration.addEventListener('updatefound', (event) {
-            final newWorker = registration.installing;
-            if (newWorker != null) {
-              newWorker.addEventListener('statechange', (event) {
-                if (newWorker.state == 'installed' &&
-                    sw.controller != null) {
-                  _waitingWorker = newWorker;
-                  updateAvailable.value = true;
+      Future.delayed(const Duration(seconds: 1), () async {
+        try {
+          final dynamic regFuture = sw.getRegistration();
+          if (regFuture != null) {
+            final dynamic registration = await regFuture;
+            if (registration != null && registration is html.ServiceWorkerRegistration) {
+              if (registration.waiting != null) {
+                _waitingWorker = registration.waiting;
+                updateAvailable.value = true;
+              }
+              registration.addEventListener('updatefound', (event) {
+                final newWorker = registration.installing;
+                if (newWorker != null) {
+                  newWorker.addEventListener('statechange', (event) {
+                    if (newWorker.state == 'installed' && sw.controller != null) {
+                      _waitingWorker = newWorker;
+                      updateAvailable.value = true;
+                    }
+                  });
                 }
               });
             }
-          });
+          }
+        } catch (_) {
+          // Dev web / localhost service worker registration absence is normal
         }
-      }).catchError((_) {
-        // Service worker might not be registered in local dev environment
       });
     } catch (_) {
-      // Ignore service worker errors in unsupported web environments
+      // Ignore unsupported web environments
     }
   }
 

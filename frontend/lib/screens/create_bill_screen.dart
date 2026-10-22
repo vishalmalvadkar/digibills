@@ -932,23 +932,26 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                     const SizedBox(height: 16),
 
                     // SHIPPED TO SECTION
-                    SwitchListTile(
-                      title: const Text('Ship to different address?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                      value: _shipToDifferentAddress,
-                      onChanged: (val) {
-                        setState(() {
-                          _shipToDifferentAddress = val;
-                          if (!val) {
-                            _shippingNameController.clear();
-                            _shippingAddressController.clear();
-                          } else {
-                            // Auto fill from customer if empty
-                            if (_shippingNameController.text.isEmpty) _shippingNameController.text = _customerController.text;
-                          }
-                        });
-                      },
-                      activeColor: AppColors.primary,
-                      contentPadding: EdgeInsets.zero,
+                    Material(
+                      color: Colors.transparent,
+                      child: SwitchListTile(
+                        title: const Text('Ship to different address?', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                        value: _shipToDifferentAddress,
+                        onChanged: (val) {
+                          setState(() {
+                            _shipToDifferentAddress = val;
+                            if (!val) {
+                              _shippingNameController.clear();
+                              _shippingAddressController.clear();
+                            } else {
+                              // Auto fill from customer if empty
+                              if (_shippingNameController.text.isEmpty) _shippingNameController.text = _customerController.text;
+                            }
+                          });
+                        },
+                        activeColor: AppColors.primary,
+                        contentPadding: EdgeInsets.zero,
+                      ),
                     ),
                     if (_shipToDifferentAddress) ...[
                       const SizedBox(height: 8),

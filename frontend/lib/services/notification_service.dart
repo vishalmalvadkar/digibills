@@ -74,7 +74,11 @@ class NotificationService {
       }
 
     } catch (e) {
-      debugPrint("Error in NotificationService: $e");
+      // Gracefully ignore network/resolution errors when backend API is handling authentication
+      final msg = e.toString();
+      if (!msg.contains('ClientException') && !msg.contains('Failed to fetch')) {
+        debugPrint("NotificationService info: $e");
+      }
     }
   }
 
