@@ -19,6 +19,8 @@ import 'purchases/purchases_list_screen.dart';
 import 'mou_screen.dart'; // NEW
 import 'sales_return_list_screen.dart'; // NEW
 import '../utils/responsive.dart';
+import '../core/responsive/breakpoints.dart';
+import '../core/responsive/max_width_container.dart';
 import '../l10n/app_localizations.dart'; // NEW
 import 'reports/supplier_bills_screen.dart';
 
@@ -238,16 +240,14 @@ class _BillsScreenState extends State<BillsScreen> {
             
             // TabBarView
             Expanded(
-              child: Center(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: Responsive.isDesktop(context) ? 1024 : double.infinity,
-                  ),
-                  child: TabBarView(
-                children: [
-                  InvoicesListTab(
-                    billsStream: _billsStream, // Pass Stream
-                    user: _currentUser,
+              child: MaxWidthContainer(
+                maxWidth: 1200,
+                padding: EdgeInsets.zero,
+                child: TabBarView(
+                  children: [
+                    InvoicesListTab(
+                      billsStream: _billsStream, // Pass Stream
+                      user: _currentUser,
                     onRefresh: _handleRefresh, // Pass Refresh Handler
                     searchQuery: _searchQuery, // NEW: Pass search query
                     filterStatus: widget.initialFilterStatus, // NEW
@@ -269,7 +269,6 @@ class _BillsScreenState extends State<BillsScreen> {
               ),
             ),
           ),
-        ),
       ],
         ),
       ),
