@@ -49,18 +49,45 @@ class _DesktopTopBarState extends State<DesktopTopBar> {
       if (mounted) {
         setState(() {
           _logoBase64 = settings.logoBase64;
+          if (_user != null && settings.tenantName.isNotEmpty && settings.tenantName != 'My Business') {
+            _user = UserModel(
+              uid: _user!.uid,
+              name: settings.tenantName,
+              email: _user!.email,
+              role: _user!.role,
+              tenantId: _user!.tenantId,
+              license: _user!.license,
+              permissions: _user!.permissions,
+              createdAt: _user!.createdAt,
+            );
+          }
         });
       }
     });
   }
 
   Future<void> _loadUser() async {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+    final uid = AuthService().currentUser?.id ?? Supabase.instance.client.auth.currentUser?.id;
     if (uid != null) {
-       // Only fetch user here, settings are handled by stream
       final user = await UserService().getUser(uid);
+      final settings = await SettingsService().fetchSettings();
       if (mounted) {
-        setState(() => _user = user);
+        setState(() {
+          if (user != null && settings.tenantName.isNotEmpty && settings.tenantName != 'My Business') {
+            _user = UserModel(
+              uid: user.uid,
+              name: settings.tenantName,
+              email: user.email,
+              role: user.role,
+              tenantId: user.tenantId,
+              license: user.license,
+              permissions: user.permissions,
+              createdAt: user.createdAt,
+            );
+          } else {
+            _user = user;
+          }
+        });
       }
     }
   }

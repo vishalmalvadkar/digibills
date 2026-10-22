@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from typing import Dict, Any
 
 from app.db.session import get_db
-from app.models.entities import Setting, User
+from app.models.entities import Setting, User, Client
 from app.schemas.schemas import SettingUpdate
 from app.api.deps import get_current_user
 
@@ -17,11 +17,27 @@ async def get_settings(
 ):
     setting = await db.get(Setting, current_user.tenant_id)
     if not setting:
-        # Create default if not found
+        # Check if there is an official business_name created by SuperAdmin in Client table
+        client_res = await db.execute(
+            select(Client).where(
+                (Client.client_id == current_user.tenant_id) | 
+                (Client.tenant_id == current_user.tenant_id) | 
+                (Client.email == current_user.email)
+            )
+        )
+        client_obj = client_res.scalars().first()
+        business_title = (
+            client_obj.business_name if (client_obj and client_obj.business_name)
+            else (current_user.name or "My Business")
+        )
+
         setting = Setting(
             tenant_id=current_user.tenant_id,
-            tenant_name=current_user.name or "My Business",
-            contact_email=current_user.email
+            tenant_name=business_title,
+            contact_email=current_user.email,
+            state=client_obj.state if (client_obj and client_obj.state) else "",
+            gst_number=client_obj.gst_number if (client_obj and client_obj.gst_number) else "",
+            contact_phone=client_obj.whatsapp_number if (client_obj and hasattr(client_obj, 'whatsapp_number')) else ""
         )
         db.add(setting)
         await db.commit()

@@ -146,27 +146,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _canCheckBiometrics = false;
       }
 
-      // Client Read-Only Logic
-      // If current user is a Client, fetch Business Name from clients table (set by Superadmin)
-      if (_currentUser != null && _currentUser!.role == 'client' && uid.isNotEmpty) {
+      // Client Business Name Logic:
+      // If current user is a Client, ensure Business Name set by Superadmin is loaded
+      if (_currentUser != null && _currentUser!.role == 'client') {
         try {
-          final clientData = await Supabase.instance.client
-              .from('clients')
-              .select('business_name')
-              .eq('client_id', uid)
-              .maybeSingle();
-          
-          if (clientData != null && clientData['business_name'] != null) {
-            _tenantController.text = clientData['business_name'];
-          } else if (_currentUser!.name != null && _currentUser!.name!.isNotEmpty) {
+          final client = await ClientService().getClientById(_currentUser!.tenantId.isNotEmpty ? _currentUser!.tenantId : uid);
+          if (client != null && client.businessName.isNotEmpty) {
+            _tenantController.text = client.businessName;
+          } else if (_currentUser!.name != null && _currentUser!.name!.isNotEmpty && _tenantController.text.isEmpty) {
             _tenantController.text = _currentUser!.name!;
           }
         } catch (e) {
           debugPrint('Error fetching client business name: $e');
-          // Fallback to user name
-          if (_currentUser!.name != null && _currentUser!.name!.isNotEmpty) {
-            _tenantController.text = _currentUser!.name!;
-          }
         }
       }
     } catch (e) {

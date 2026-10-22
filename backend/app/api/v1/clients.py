@@ -5,7 +5,7 @@ from typing import List
 import uuid
 
 from app.db.session import get_db
-from app.models.entities import Client, User
+from app.models.entities import Client, User, Setting
 from app.schemas.schemas import ClientCreate, ClientUpdate
 from app.api.deps import get_current_user
 from app.core.websockets import manager
@@ -17,9 +17,13 @@ async def get_clients(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(Client).where(Client.tenant_id == current_user.tenant_id).order_by(Client.business_name.asc())
-    )
+    # If Superadmin, return all clients; otherwise filter by tenant
+    if current_user.role == "superAdmin":
+        result = await db.execute(select(Client).order_by(Client.business_name.asc()))
+    else:
+        result = await db.execute(
+            select(Client).where(Client.tenant_id == current_user.tenant_id).order_by(Client.business_name.asc())
+        )
     clients = result.scalars().all()
     return [
         {
@@ -53,10 +57,39 @@ async def create_client(
     c_data = client_in.model_dump()
     client_id = str(uuid.uuid4())
     c_data["client_id"] = client_id
-    c_data["tenant_id"] = current_user.tenant_id
+    # If created by Superadmin for a new shop owner, assign dedicated tenant_id
+    c_data["tenant_id"] = client_id if current_user.role == "superAdmin" else current_user.tenant_id
 
     client = Client(**c_data)
     db.add(client)
+
+    # Automatically synchronize Setting for this tenant so the exact business name appears on Dashboard & Settings screen
+    setting = await db.get(Setting, client.tenant_id)
+    if setting:
+        setting.tenant_name = client.business_name
+        setting.contact_email = client.email
+        if client.state:
+            setting.state = client.state
+        if client.gst_number:
+            setting.gst_number = client.gst_number
+    else:
+        db.add(Setting(
+            tenant_id=client.tenant_id,
+            tenant_name=client.business_name,
+            contact_email=client.email,
+            state=client.state or "",
+            gst_number=client.gst_number or ""
+        ))
+
+    # Also update any User account associated with this email
+    user_res = await db.execute(select(User).where(User.email == client.email))
+    user_match = user_res.scalars().first()
+    if user_match:
+        user_match.tenant_id = client.tenant_id
+        user_match.name = client.business_name
+        if client.license:
+            user_match.license = client.license
+
     await db.commit()
     await db.refresh(client)
 
@@ -81,7 +114,7 @@ async def create_client(
     }
 
     await manager.broadcast_to_tenant(
-        current_user.tenant_id,
+        client.tenant_id,
         {"table": "clients", "action": "INSERT", "data": res}
     )
 
@@ -94,15 +127,37 @@ async def update_client(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(Client).where(Client.client_id == client_id, Client.tenant_id == current_user.tenant_id)
-    )
+    if current_user.role == "superAdmin":
+        result = await db.execute(select(Client).where(Client.client_id == client_id))
+    else:
+        result = await db.execute(
+            select(Client).where(Client.client_id == client_id, Client.tenant_id == current_user.tenant_id)
+        )
     client = result.scalars().first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
     for field, value in client_in.model_dump(exclude_unset=True).items():
         setattr(client, field, value)
+
+    # Sync to Setting table so Dashboard and Settings screen get updated instantly
+    setting = await db.get(Setting, client.tenant_id)
+    if setting:
+        setting.tenant_name = client.business_name
+        if client.email:
+            setting.contact_email = client.email
+        if client.state:
+            setting.state = client.state
+        if client.gst_number:
+            setting.gst_number = client.gst_number
+
+    # Sync to User table
+    user_res = await db.execute(select(User).where(User.email == client.email))
+    user_match = user_res.scalars().first()
+    if user_match:
+        user_match.name = client.business_name
+        if client.license:
+            user_match.license = client.license
 
     await db.commit()
     await db.refresh(client)
@@ -128,7 +183,7 @@ async def update_client(
     }
 
     await manager.broadcast_to_tenant(
-        current_user.tenant_id,
+        client.tenant_id,
         {"table": "clients", "action": "UPDATE", "data": res}
     )
 
