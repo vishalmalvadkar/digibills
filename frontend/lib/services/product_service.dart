@@ -102,6 +102,29 @@ class ProductService {
     }
   }
 
+  Future<List<ProductModel>> getProducts() async {
+    try {
+      final res = await _api.get('/api/v1/products');
+      if (res is List) {
+        _cachedProducts.clear();
+        for (var item in res) {
+          _cachedProducts.add(ProductModel.fromMap(Map<String, dynamic>.from(item)));
+        }
+        _sortAndEmit();
+      }
+    } catch (_) {}
+    return List.unmodifiable(_cachedProducts);
+  }
+
+  Future<void> updateStock(String productId, double quantityChange) async {
+    final prod = _cachedProducts.where((p) => p.productId == productId).firstOrNull;
+    final currentStock = prod?.stockQuantity ?? 0.0;
+    final newStock = currentStock + quantityChange;
+    await _api.put('/api/v1/products/$productId', body: {
+      'stock_quantity': newStock,
+    });
+  }
+
   Future<void> deleteProduct(String productId) async {
     await _api.delete('/api/v1/products/$productId');
   }

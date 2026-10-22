@@ -141,7 +141,7 @@ class _EditBillScreenState extends State<EditBillScreen> {
     if (user == null) return;
 
     try {
-      final results = await Future.wait([
+      final results = await Future.wait<dynamic>([
         ClientService().getClient(user.id),
         BillsService().fetchBillsSnapshot(),
         SettingsService().fetchSettings(),

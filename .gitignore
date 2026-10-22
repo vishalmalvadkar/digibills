@@ -27,11 +27,16 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+frontend/.dart_tool/
 .flutter-plugins-dependencies
+frontend/.flutter-plugins-dependencies
 .pub-cache/
 .pub/
+frontend/.pub/
 /build/
+frontend/build/
 /coverage/
+frontend/coverage/
 
 # Symbolication related
 app.*.symbols
@@ -40,9 +45,9 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
 
 # Environment variables & secrets
 .env

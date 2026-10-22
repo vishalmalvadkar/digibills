@@ -72,4 +72,8 @@ class SettingsService {
       rethrow;
     }
   }
+
+  Future<void> saveSettings(AppSettings settings) async {
+    await updateSettings(settings);
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/product_service.dart';
+import '../services/api_client.dart';
 import '../theme/app_colors.dart';
 import '../widgets/scanner_overlay.dart';
 import '../utils/snackbar_helper.dart';
@@ -153,8 +154,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                            return;
                         }
 
-                        final userId = _productService.auth.currentUser?.id;
-                        if (userId == null) return;
+                        final userId = ApiClient().currentUserId;
+                        if (userId.isEmpty) return;
 
                         final updatedProduct = ProductModel(
                           productId: product?.productId,
@@ -436,8 +437,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
       }
 
       List<ProductModel> productsToSave = [];
-      final userId = _productService.auth.currentUser?.id;
-      if (userId == null) return;
+      final userId = ApiClient().currentUserId;
+      if (userId.isEmpty) return;
 
       for (var line in lines) {
         if (line.trim().isEmpty) continue;

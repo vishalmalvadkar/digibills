@@ -113,6 +113,24 @@ class ClientService {
   Future<ClientModel?> getClientById(String clientId) async {
     final cached = _cachedClients.where((c) => c.clientId == clientId).firstOrNull;
     if (cached != null) return cached;
+    try {
+      final res = await _api.get('/api/v1/clients/$clientId');
+      if (res is Map<String, dynamic>) {
+        return ClientModel.fromMap(res);
+      }
+    } catch (_) {}
     return null;
+  }
+
+  Future<ClientModel?> getClient(String clientId) async {
+    return getClientById(clientId);
+  }
+
+  Future<void> createClient(ClientModel client) async {
+    await addClient(client);
+  }
+
+  Future<void> syncMissingStates() async {
+    // No-op for FastAPI backend as states are handled in DB
   }
 }

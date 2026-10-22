@@ -78,14 +78,80 @@ class BillsService {
     return streamBills();
   }
 
-  Future<void> addBill(BillModel bill) async {
+  Future<List<BillModel>> fetchBillsSnapshot({String? clientId, String? staffId}) async {
+    try {
+      final query = <String, String>{};
+      if (clientId != null) query['client_id'] = clientId;
+      if (staffId != null) query['created_by'] = staffId;
+      final res = await _api.get('/api/v1/bills', queryParams: query);
+      if (res is List) {
+        _cachedBills.clear();
+        for (var item in res) {
+          _cachedBills.add(BillModel.fromMap(Map<String, dynamic>.from(item)));
+        }
+        _sortAndEmit();
+      }
+    } catch (_) {}
+    return List.unmodifiable(_cachedBills);
+  }
+
+  Future<List<BillModel>> getUserRelevantBills(String uid) async {
+    return fetchBillsSnapshot();
+  }
+
+  Future<String> addBill(BillModel bill) async {
     final body = bill.toMap();
-    await _api.post('/api/v1/bills', body: body);
+    final res = await _api.post('/api/v1/bills', body: body);
+    if (res is Map<String, dynamic> && res['bill_id'] != null) {
+      return res['bill_id'] as String;
+    }
+    return bill.billId;
   }
 
   Future<void> updateBill(BillModel bill) async {
     final body = bill.toMap();
     await _api.put('/api/v1/bills/${bill.billId}', body: body);
+  }
+
+  Future<void> updateBillStatus(String billId, String status, DateTime? paymentReceivedDate) async {
+    final body = {
+      'payment_status': status,
+      if (paymentReceivedDate != null)
+        'payment_received_date': paymentReceivedDate.toIso8601String(),
+    };
+    await _api.put('/api/v1/bills/$billId', body: body);
+  }
+
+  Future<void> addPayment(String billId, PaymentRecord payment) async {
+    final currentBill = await getBillById(billId);
+    final updatedPayments = [
+      if (currentBill != null) ...currentBill.payments,
+      payment,
+    ];
+    final totalPaid = updatedPayments.fold<double>(0.0, (acc, p) => acc + p.amount);
+    final totalAmount = currentBill?.totalAmount ?? 0.0;
+    final newStatus = totalPaid >= totalAmount ? 'Paid' : (totalPaid > 0 ? 'Partial' : 'Pending');
+
+    final body = {
+      'payments': updatedPayments.map((p) => p.toMap()).toList(),
+      'payment_status': newStatus,
+    };
+    await _api.put('/api/v1/bills/$billId', body: body);
+  }
+
+  Future<void> deletePayment(String billId, String paymentId) async {
+    final currentBill = await getBillById(billId);
+    if (currentBill == null) return;
+    final updatedPayments = currentBill.payments.where((p) => p.id != paymentId).toList();
+    final totalPaid = updatedPayments.fold<double>(0.0, (acc, p) => acc + p.amount);
+    final totalAmount = currentBill.totalAmount;
+    final newStatus = totalPaid >= totalAmount ? 'Paid' : (totalPaid > 0 ? 'Partial' : 'Pending');
+
+    final body = {
+      'payments': updatedPayments.map((p) => p.toMap()).toList(),
+      'payment_status': newStatus,
+    };
+    await _api.put('/api/v1/bills/$billId', body: body);
   }
 
   Future<void> deleteBill(String billId) async {
@@ -95,6 +161,12 @@ class BillsService {
   Future<BillModel?> getBillById(String billId) async {
     final cached = _cachedBills.where((b) => b.billId == billId).firstOrNull;
     if (cached != null) return cached;
+    try {
+      final res = await _api.get('/api/v1/bills/$billId');
+      if (res is Map<String, dynamic>) {
+        return BillModel.fromMap(res);
+      }
+    } catch (_) {}
     return null;
   }
 }
