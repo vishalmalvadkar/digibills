@@ -8,6 +8,7 @@ import '../services/bills_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/validators.dart';
 import '../utils/snackbar_helper.dart';
+import '../core/responsive/max_width_container.dart';
 
 class CreateQuoteScreen extends StatefulWidget {
   final String initialDocType;
@@ -372,6 +373,7 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      resizeToAvoidBottomInset: true, // Prevents bottom overflow when virtual keyboard opens
       appBar: AppBar(
         title: Text('New ${_docType == 'Quote' ? 'Quotation' : 'Proforma Invoice'}'),
         backgroundColor: Colors.white,
@@ -383,9 +385,10 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
           child: Container(color: AppColors.border, height: 1),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
+      body: MaxWidthContainer.form(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,6 +633,7 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
             ],
           ),
         ),
+      ),
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),

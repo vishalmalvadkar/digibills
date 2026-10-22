@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/bill_model.dart';
 import '../services/bills_service.dart';
@@ -20,6 +20,8 @@ import '../models/client_model.dart';
 import '../providers/shell_provider.dart';
 import 'package:provider/provider.dart';
 import '../utils/responsive.dart';
+import '../core/responsive/breakpoints.dart';
+import '../core/responsive/max_width_container.dart';
 import '../widgets/license_scope.dart';
 import '../l10n/app_localizations.dart'; 
 import '../services/sequence_service.dart'; // NEW
@@ -730,6 +732,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      resizeToAvoidBottomInset: true, // Prevents bottom overflow when virtual keyboard opens
       appBar: Responsive.isDesktop(context) 
         ? null 
         : AppBar(
@@ -744,9 +747,10 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
               child: Container(color: AppColors.border, height: 1),
             ),
           ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24), // Reduced padding
-        child: Form(
+      body: MaxWidthContainer.form(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24), // Reduced padding
+          child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1608,6 +1612,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
