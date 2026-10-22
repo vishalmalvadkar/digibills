@@ -140,6 +140,19 @@ class DigiBillsApp extends StatelessWidget {
             ),
           ),
           builder: (context, child) {
+            // Clamp OS font scaling between 0.85x and 1.25x so extreme system accessibility sizes
+            // do not break card boundaries on compact mobile devices or distort on smartboards.
+            final mediaQuery = MediaQuery.of(context);
+            final clampedChild = MediaQuery(
+              data: mediaQuery.copyWith(
+                textScaler: mediaQuery.textScaler.clamp(
+                  minScaleFactor: 0.85,
+                  maxScaleFactor: 1.25,
+                ),
+              ),
+              child: child!,
+            );
+
             return StreamBuilder<ConnectionStatus>(
               stream: ConnectivityService().statusStream,
               initialData: ConnectivityService().currentStatus,
@@ -148,7 +161,7 @@ class DigiBillsApp extends StatelessWidget {
                 if (status == ConnectionStatus.offline) {
                   return const NoInternetScreen();
                 }
-                return child!;
+                return clampedChild;
               },
             );
           },
