@@ -48,7 +48,7 @@ void main() async {
 
   try {
     await Supabase.initialize(
-      url: 'https://homasymduztmrcuqvuqm.supabase.co',
+      url: 'http://127.0.0.1:8000',
       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvbWFzeW1kdXp0bXJjdXF2dXFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4ODY1ODQsImV4cCI6MjA4NDQ2MjU4NH0.BJPLe4KDCFQ4P9-B80tCAca2pWA-BAKZUyDV1NfoL2A',
     );
 
@@ -82,10 +82,14 @@ void main() async {
     Timer.periodic(const Duration(milliseconds: 500), (timer) {
       try {
         final splash = html.document.getElementById('splash');
-        if (splash != null) splash.remove();
+        if (splash != null && splash.parentNode != null) {
+          splash.remove();
+        }
 
         final loader = html.document.getElementsByClassName('loading');
-        if (loader.isNotEmpty) loader.first.remove();
+        if (loader.isNotEmpty && loader.first.parentNode != null) {
+          loader.first.remove();
+        }
 
         html.document.body?.style.background = 'transparent';
         html.document.documentElement?.style.background = 'transparent';

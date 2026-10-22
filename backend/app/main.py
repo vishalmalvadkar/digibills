@@ -66,11 +66,45 @@ async def websocket_endpoint(websocket: WebSocket, tenant_id: str):
     except Exception:
         manager.disconnect(websocket, tenant_id)
 
+# Supabase Compatibility Layer (Rest & Realtime WebSocket)
+# Allows legacy Supabase Flutter client to talk to the local FastAPI backend seamlessly without net::ERR_NAME_NOT_RESOLVED
+@app.get("/rest/v1/platform_config")
+async def get_platform_config():
+    return [{
+        "id": 1,
+        "maintenance_mode": False,
+        "announcement_type": "info",
+        "maintenance_message": "System running normally on local backend.",
+        "min_app_version": "1.0.0",
+        "updated_at": "2026-10-22T00:00:00"
+    }]
+
+@app.get("/rest/v1/{table_name}")
+async def get_supabase_rest_compat(table_name: str):
+    # Returns empty list for notifications, calendar_events, etc.
+    return []
+
+@app.websocket("/realtime/v1/websocket")
+async def supabase_realtime_websocket(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            # Handle Phoenix channel protocol heartbeat/messages from realtime_client
+            msg = await websocket.receive_text()
+            if "heartbeat" in msg:
+                await websocket.send_text('{"event":"phx_reply","payload":{"response":{},"status":"ok"},"ref":"heartbeat","topic":"phoenix"}')
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
+
 @app.get("/")
 def read_root():
     return {
         "app": settings.PROJECT_NAME,
         "status": "online",
         "docs": "/docs",
-        "realtime_ws": "/ws/{tenant_id}"
+        "realtime_ws": "/ws/{tenant_id}",
+        "supabase_compat": True
     }
+

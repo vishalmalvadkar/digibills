@@ -1020,8 +1020,11 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                     const SizedBox(height: 24),
                     
                     // Multiple Items Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         Text(
                           AppLocalizations.of(context)?.billItems ?? 'Items',
@@ -1031,101 +1034,105 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                             color: AppColors.textDark,
                           ),
                         ),
-                        Row(
-                          children: [
-                            // Premium Sliding Toggle for HSN/SAC
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _invoiceHsnType = _invoiceHsnType == 'HSN' ? 'SAC' : 'HSN';
-                                });
-                              },
-                              child: Container(
-                                width: 100,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: AppColors.background,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    AnimatedAlign(
-                                      duration: const Duration(milliseconds: 250),
-                                      curve: Curves.easeInOut,
-                                      alignment: _invoiceHsnType == 'HSN' ? Alignment.centerLeft : Alignment.centerRight,
-                                      child: Container(
-                                        width: 50,
-                                        height: 30,
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius: BorderRadius.circular(18),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: AppColors.primary.withOpacity(0.3),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Premium Sliding Toggle for HSN/SAC
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _invoiceHsnType = _invoiceHsnType == 'HSN' ? 'SAC' : 'HSN';
+                                  });
+                                },
+                                child: Container(
+                                  width: 100,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.background,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      AnimatedAlign(
+                                        duration: const Duration(milliseconds: 250),
+                                        curve: Curves.easeInOut,
+                                        alignment: _invoiceHsnType == 'HSN' ? Alignment.centerLeft : Alignment.centerRight,
+                                        child: Container(
+                                          width: 50,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary,
+                                            borderRadius: BorderRadius.circular(18),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: AppColors.primary.withOpacity(0.3),
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          child: Center(
-                                            child: Text(
-                                              'HSN',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: _invoiceHsnType == 'HSN' ? Colors.white : AppColors.textGrey,
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Center(
+                                              child: Text(
+                                                'HSN',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: _invoiceHsnType == 'HSN' ? Colors.white : AppColors.textGrey,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Expanded(
-                                          child: Center(
-                                            child: Text(
-                                              'SAC',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: _invoiceHsnType == 'SAC' ? Colors.white : AppColors.textGrey,
+                                          Expanded(
+                                            child: Center(
+                                              child: Text(
+                                                'SAC',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: _invoiceHsnType == 'SAC' ? Colors.white : AppColors.textGrey,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton.icon(
-                              onPressed: _startScanning,
-                              icon: const Icon(Icons.qr_code_scanner, size: 18, color: Colors.orange),
-                              label: Text(AppLocalizations.of(context)?.scanBarcode ?? 'Scan', style: const TextStyle(color: Colors.orange)),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(50, 30),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: _startScanning,
+                                icon: const Icon(Icons.qr_code_scanner, size: 18, color: Colors.orange),
+                                label: Text(AppLocalizations.of(context)?.scanBarcode ?? 'Scan', style: const TextStyle(color: Colors.orange)),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                  minimumSize: const Size(40, 30),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
-                              onPressed: _addItem,
-                              icon: const Icon(Icons.add_circle_outline, size: 18),
-                              label: Text(AppLocalizations.of(context)?.addItem ?? 'Add Item'),
-                              style: TextButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                minimumSize: const Size(50, 30),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              const SizedBox(width: 4),
+                              TextButton.icon(
+                                onPressed: _addItem,
+                                icon: const Icon(Icons.add_circle_outline, size: 18),
+                                label: Text(AppLocalizations.of(context)?.addItem ?? 'Add Item'),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                  minimumSize: const Size(40, 30),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),

@@ -555,24 +555,27 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
                                  )),
                                 ]),
                                 const SizedBox(height: 8),
-                                Row(children: [
-                                  // NEW: HSN Field
-                                 Expanded(child: TextFormField(controller: _hsnControllers[index], decoration: _inputDeco('HSN/SAC', null))),
-                                 const SizedBox(width: 8),
-                                 Expanded(child: TextFormField(
-                                    controller: _unitPriceControllers[index], 
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (_) => _calculateItemTotal(index),
-                                    decoration: _inputDeco('Rate', null)
-                                 )),
-                                 const SizedBox(width: 8),
-                                 Expanded(child: TextFormField(
-                                    controller: _amountControllers[index], 
-                                    readOnly: true,
-                                    decoration: _inputDeco('Amt', null)
-                                 )),
-                                 IconButton(onPressed: () => _removeItem(index), icon: const Icon(Icons.delete, color: Colors.red)),
-                                ]),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(children: [
+                                    // NEW: HSN Field
+                                    SizedBox(width: 85, child: TextFormField(controller: _hsnControllers[index], decoration: _inputDeco('HSN/SAC', null))),
+                                    const SizedBox(width: 8),
+                                    SizedBox(width: 85, child: TextFormField(
+                                       controller: _unitPriceControllers[index], 
+                                       keyboardType: TextInputType.number,
+                                       onChanged: (_) => _calculateItemTotal(index),
+                                       decoration: _inputDeco('Rate', null)
+                                    )),
+                                    const SizedBox(width: 8),
+                                    SizedBox(width: 85, child: TextFormField(
+                                       controller: _amountControllers[index], 
+                                       readOnly: true,
+                                       decoration: _inputDeco('Amt', null)
+                                    )),
+                                    IconButton(onPressed: () => _removeItem(index), icon: const Icon(Icons.delete, color: Colors.red)),
+                                  ]),
+                                ),
                              ],
                            ),
                          );
