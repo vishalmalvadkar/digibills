@@ -11,6 +11,7 @@ import '../services/pwa_update_service.dart'; // NEW
 import '../services/notification_service.dart';
 import 'creation_menu_screen.dart'; // NEW import
 import '../utils/responsive.dart';
+import '../core/responsive/breakpoints.dart';
 import '../widgets/desktop_top_bar.dart';
 import '../providers/shell_provider.dart';
 import '../l10n/app_localizations.dart'; // NEW
@@ -116,15 +117,18 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = Responsive.isMobile(context);
+    final bool isCompact = context.isCompact;
+    final bool isDesktop = context.isExpanded || context.isLarge;
     
     return Scaffold(
       backgroundColor: AppColors.background,
       resizeToAvoidBottomInset: false, 
       body: SafeArea(
+        top: true,
+        bottom: isCompact ? false : true, // Handled by bottom navigation bar on mobile
         child: Row(
           children: [
-            if (!isMobile)
+            if (!isCompact)
               NavigationRail(
                 selectedIndex: _currentIndex,
                 onDestinationSelected: (index) {
@@ -140,7 +144,7 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
                 },
                 backgroundColor: Colors.white,
                 elevation: 5,
-                extended: Responsive.isDesktop(context),
+                extended: isDesktop,
                 leading: Column(
                   children: [
                     const SizedBox(height: 20),
@@ -181,31 +185,31 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
                 destinations: _validIndices.map((originalIndex) {
                    switch (originalIndex) {
                      case 0: return NavigationRailDestination(
-                        icon: Icon(Icons.dashboard_outlined),
-                        selectedIcon: Icon(Icons.dashboard),
+                        icon: const Icon(Icons.dashboard_outlined),
+                        selectedIcon: const Icon(Icons.dashboard),
                         label: Text(AppLocalizations.of(context)!.dashboard),
                       );
                      case 1: return NavigationRailDestination(
-                        icon: Icon(Icons.receipt_long_outlined),
-                        selectedIcon: Icon(Icons.receipt_long),
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        selectedIcon: const Icon(Icons.receipt_long),
                         label: Text(AppLocalizations.of(context)!.transactions), 
                       );
                      case 2: return NavigationRailDestination(
-                        icon: Icon(Icons.calendar_month_outlined),
-                        selectedIcon: Icon(Icons.calendar_month),
+                        icon: const Icon(Icons.calendar_month_outlined),
+                        selectedIcon: const Icon(Icons.calendar_month),
                         label: Text(AppLocalizations.of(context)!.calendar),
                       );
                      case 3: return NavigationRailDestination(
-                        icon: Icon(Icons.account_balance_wallet_outlined),
-                        selectedIcon: Icon(Icons.account_balance_wallet),
+                        icon: const Icon(Icons.account_balance_wallet_outlined),
+                        selectedIcon: const Icon(Icons.account_balance_wallet),
                         label: Text(AppLocalizations.of(context)!.account),
                       );
                      case 4: return NavigationRailDestination(
-                        icon: Icon(Icons.settings_outlined),
-                        selectedIcon: Icon(Icons.settings),
+                        icon: const Icon(Icons.settings_outlined),
+                        selectedIcon: const Icon(Icons.settings),
                         label: Text(AppLocalizations.of(context)!.settings),
                       );
-                     default: return NavigationRailDestination(icon: SizedBox(), label: Text(''));
+                     default: return const NavigationRailDestination(icon: SizedBox(), label: Text(''));
                    }
                 }).toList(),
                 selectedIconTheme: const IconThemeData(color: AppColors.primary),
@@ -218,7 +222,7 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
                 value: _shellState,
                 child: Column(
                   children: [
-                    if (!isMobile) 
+                    if (!isCompact) 
                       DesktopTopBar(
                         onNavigateToSettings: () {
                           // Check if settings is in valid indices
@@ -237,7 +241,7 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
                     _buildReadOnlyBanner(),
                     
                   Expanded(
-                    child: isMobile 
+                    child: isCompact 
                       ? IndexedStack(
                           index: _validIndices[_currentIndex], // Map visual index to actual screen index
                           children: _screens, // Contains ALL screens
@@ -261,7 +265,7 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
         ],
       ),
     ),
-    floatingActionButton: isMobile && !LicenseScope.isReadOnlyMode(context) && (_currentUser?.role != 'staff' || (_currentUser?.permissions.contains('create_bills') ?? false))
+    floatingActionButton: isCompact && !LicenseScope.isReadOnlyMode(context) && (_currentUser?.role != 'staff' || (_currentUser?.permissions.contains('create_bills') ?? false))
           ? SizedBox(
               height: 56, 
               width: 56,
@@ -282,35 +286,38 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: isMobile ? Container( 
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-             BoxShadow(
-               color: Colors.black.withOpacity(0.1),
-               blurRadius: 20,
-               spreadRadius: 0,
-               offset: const Offset(0, -5),
-             ),
-          ],
-        ),
-        child: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 10,
-          color: Colors.white,
-          surfaceTintColor: Colors.white,
-          elevation: 0, 
-          child: SizedBox(
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                 if (_validIndices.contains(0)) _buildNavItem(_validIndices.indexOf(0), Icons.dashboard_outlined, Icons.dashboard, AppLocalizations.of(context)!.dashboard),
-                 if (_validIndices.contains(1)) _buildNavItem(_validIndices.indexOf(1), Icons.receipt_long_outlined, Icons.receipt_long, AppLocalizations.of(context)!.transactions), 
-                 const SizedBox(width: 40), 
-                 if (_validIndices.contains(3)) _buildNavItem(_validIndices.indexOf(3), Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, AppLocalizations.of(context)!.account),
-                 if (_validIndices.contains(4)) _buildNavItem(_validIndices.indexOf(4), Icons.settings_outlined, Icons.settings, AppLocalizations.of(context)!.settings),
-              ],
+      bottomNavigationBar: isCompact ? SafeArea(
+        top: false,
+        child: Container( 
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+               BoxShadow(
+                 color: Colors.black.withOpacity(0.08),
+                 blurRadius: 20,
+                 spreadRadius: 0,
+                 offset: const Offset(0, -5),
+               ),
+            ],
+          ),
+          child: BottomAppBar(
+            shape: const CircularNotchedRectangle(),
+            notchMargin: 8,
+            color: Colors.white,
+            surfaceTintColor: Colors.white,
+            elevation: 0, 
+            child: SizedBox(
+              height: 60,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                   if (_validIndices.contains(0)) _buildNavItem(_validIndices.indexOf(0), Icons.dashboard_outlined, Icons.dashboard, AppLocalizations.of(context)!.dashboard),
+                   if (_validIndices.contains(1)) _buildNavItem(_validIndices.indexOf(1), Icons.receipt_long_outlined, Icons.receipt_long, AppLocalizations.of(context)!.transactions), 
+                   const SizedBox(width: 40), 
+                   if (_validIndices.contains(3)) _buildNavItem(_validIndices.indexOf(3), Icons.account_balance_wallet_outlined, Icons.account_balance_wallet, AppLocalizations.of(context)!.account),
+                   if (_validIndices.contains(4)) _buildNavItem(_validIndices.indexOf(4), Icons.settings_outlined, Icons.settings, AppLocalizations.of(context)!.settings),
+                ],
+              ),
             ),
           ),
         ),
