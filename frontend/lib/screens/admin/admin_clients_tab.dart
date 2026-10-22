@@ -292,7 +292,7 @@ class _ClientListCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green, size: 20),
+                      icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green, size: 20),
                       onPressed: () => _shareInvoice(context),
                       tooltip: 'Share Invoice',
                       padding: EdgeInsets.zero,

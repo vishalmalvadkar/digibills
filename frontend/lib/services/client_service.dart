@@ -126,7 +126,36 @@ class ClientService {
     return getClientById(clientId);
   }
 
-  Future<void> createClient(ClientModel client) async {
+  Future<void> createClient({
+    required String businessName,
+    required String ownerName,
+    required String email,
+    required String whatsappNumber,
+    required LicenseModel license,
+    String? state,
+    String? gstNumber,
+    double amount = 0.0,
+    double taxPercentage = 0.0,
+    String paymentMode = 'Cash',
+    String paymentStatus = 'Pending',
+    List<PaymentRecord> advances = const [],
+  }) async {
+    final client = ClientModel(
+      clientId: '',
+      businessName: businessName,
+      ownerName: ownerName,
+      email: email,
+      whatsappNumber: whatsappNumber,
+      state: state ?? '',
+      gstNumber: gstNumber ?? '',
+      license: license,
+      amount: amount,
+      paymentMode: paymentMode,
+      paymentStatus: paymentStatus,
+      taxPercentage: taxPercentage,
+      advances: advances,
+      createdAt: DateTime.now(),
+    );
     await addClient(client);
   }
 

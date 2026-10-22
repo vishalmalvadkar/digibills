@@ -694,14 +694,16 @@ class _InvoicesListTabState extends State<InvoicesListTab> with AutomaticKeepAli
     return AppColors.error;
   }
 
-  Widget _actionButton({required IconData icon, required Color color, required VoidCallback? onTap, bool isDisabled = false}) {
+  Widget _actionButton({required dynamic icon, required Color color, required VoidCallback? onTap, bool isDisabled = false}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(color: isDisabled ? Colors.grey.withOpacity(0.1) : color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 18, color: isDisabled ? Colors.grey : color),
+        child: icon is IconData
+            ? Icon(icon, size: 18, color: isDisabled ? Colors.grey : color)
+            : FaIcon(icon, size: 18, color: isDisabled ? Colors.grey : color),
       ),
     );
   }

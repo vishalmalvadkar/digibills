@@ -391,7 +391,7 @@ class _QuoteViewScreenState extends State<QuoteViewScreen> {
     );
   }
 
-  Widget _contactRow(IconData icon, String value, Color color, VoidCallback onTap) {
+  Widget _contactRow(dynamic icon, String value, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Row(
@@ -399,7 +399,9 @@ class _QuoteViewScreenState extends State<QuoteViewScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, size: 16, color: color),
+            child: icon is IconData
+                ? Icon(icon, size: 16, color: color)
+                : FaIcon(icon, size: 16, color: color),
           ),
           const SizedBox(width: 12),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),

@@ -160,7 +160,7 @@ For any queries, contact us.
               // WhatsApp Share Button
               IconButton(
                 onPressed: () => _shareViaWhatsApp(client, settings, balance, totalAmount),
-                icon: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
+                icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),
                 tooltip: 'Share via WhatsApp',
               ),
               const SizedBox(width: 8),
@@ -439,7 +439,7 @@ For any queries, contact us.
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _shareViaWhatsApp(client, settings, balance, totalAmount),
-                          icon: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
+                          icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),
                           label: const Text('Share Invoice', style: TextStyle(color: Colors.green)),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),

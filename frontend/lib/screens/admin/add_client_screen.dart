@@ -250,7 +250,7 @@ class _AddClientScreenState extends State<AddClientScreen> {
                 ],
                 decoration: const InputDecoration(
                   labelText: 'WhatsApp Number',
-                  prefixIcon: Icon(FontAwesomeIcons.whatsapp), // Changed Icon
+                  prefixIcon: FaIcon(FontAwesomeIcons.whatsapp), // Changed Icon
                 ),
                 keyboardType: TextInputType.phone,
               ),

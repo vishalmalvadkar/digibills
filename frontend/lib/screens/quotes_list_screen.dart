@@ -326,7 +326,7 @@ class _QuotesListScreenState extends State<QuotesListScreen> {
   }
 
   Widget _actionButton(BuildContext context, {
-    required IconData icon,
+    required dynamic icon,
     required Color color,
     required VoidCallback onTap,
     bool isDisabled = false,
@@ -340,11 +340,9 @@ class _QuotesListScreenState extends State<QuotesListScreen> {
           color: isDisabled ? Colors.grey.withOpacity(0.1) : color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon, 
-          size: 18, 
-          color: isDisabled ? Colors.grey : color
-        ),
+        child: icon is IconData
+            ? Icon(icon, size: 18, color: isDisabled ? Colors.grey : color)
+            : FaIcon(icon, size: 18, color: isDisabled ? Colors.grey : color),
       ),
     );
   }

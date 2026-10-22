@@ -112,7 +112,7 @@ class DocumentShareHelper {
 }
 
 class _ShareOption extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -134,7 +134,9 @@ class _ShareOption extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
           children: [
-            FaIcon(icon, color: color, size: 32),
+            icon is IconData
+                ? Icon(icon, color: color, size: 32)
+                : FaIcon(icon, color: color, size: 32),
             const SizedBox(height: 8),
             Text(
               label,

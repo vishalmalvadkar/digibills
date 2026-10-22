@@ -223,7 +223,7 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
-    IconData? icon,
+    dynamic icon,
     TextInputType? keyboardType,
     int maxLines = 1,
     bool readOnly = false,
@@ -239,7 +239,11 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: icon != null ? Icon(icon, color: AppColors.textGrey, size: 20) : null,
+        prefixIcon: icon != null
+            ? (icon is IconData
+                ? Icon(icon, color: AppColors.textGrey, size: 20)
+                : FaIcon(icon, color: AppColors.textGrey, size: 20))
+            : null,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -684,10 +688,14 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
 
 
 
-  InputDecoration _inputDeco(String label, IconData? icon) {
+  InputDecoration _inputDeco(String label, dynamic icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: icon != null ? Icon(icon, color: AppColors.textGrey, size: 20) : null,
+      prefixIcon: icon != null
+          ? (icon is IconData
+              ? Icon(icon, color: AppColors.textGrey, size: 20)
+              : FaIcon(icon, color: AppColors.textGrey, size: 20))
+          : null,
       filled: true,
       fillColor: Colors.white,
       // Fixed: Visible Border

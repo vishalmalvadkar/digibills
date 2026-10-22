@@ -269,7 +269,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
             margin: const EdgeInsets.only(right: 8),
             child: IconButton(
               onPressed: _shareInvoice,
-              icon: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green, size: 20),
+              icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green, size: 20),
               tooltip: 'Share Invoice',
             ),
           ),
@@ -514,7 +514,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
+    required dynamic icon,
     bool enabled = true,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
@@ -527,7 +527,9 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
       style: const TextStyle(fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20, color: AppColors.textGrey),
+        prefixIcon: icon is IconData
+            ? Icon(icon, size: 20, color: AppColors.textGrey)
+            : FaIcon(icon, size: 20, color: AppColors.textGrey),
         filled: !enabled,
         fillColor: enabled ? null : Colors.grey.shade50,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
