@@ -41,45 +41,6 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
     name="viewport">
 
-
-
-  <script id="viewport-fix-script">
-    // ROBUST VIEWPORT MANAGER
-    // Forces window to strict bounds and handles keyboard resizing manually
-    // to prevent white-space gaps on Android.
-
-    function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.getElementById("splash-text")?.remove();
-      document.body.style.background = "#F8FAFC";
-    }
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', () => {
-        // When keyboard opens/closes, browser visual viewport changes.
-        // We force body height to match, preventing overflow/gap.
-        document.body.style.height = window.visualViewport.height + 'px';
-
-        // Force scroll reset to prevent "scrolled out" view
-        window.scrollTo(0, 0);
-      });
-
-      window.visualViewport.addEventListener('scroll', () => {
-        // Prevent user or browser from scrolling the viewport
-        if (window.visualViewport.scrollTop !== 0 || window.visualViewport.scrollLeft !== 0) {
-          window.scrollTo(0, 0);
-        }
-      });
-    }
-  </script>
-
-
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-
-
-
-
   <style id="splash-screen-style">
     html {
       height: 100%
@@ -161,13 +122,6 @@
       right: 0;
     }
   </style>
-  <script id="splash-screen-script">
-    function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.body.style.background = "transparent";
-    }
-  </script>
 </head>
 
 <body>

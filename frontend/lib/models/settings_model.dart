@@ -57,6 +57,25 @@ class AppSettings {
     this.invoiceStartNumber = 1, // Default
   });
 
+  factory AppSettings.defaultSettings() {
+    return AppSettings(
+      tenantName: 'My Business',
+      contactEmail: '',
+      contactPhone: '',
+      bankName: '',
+      accountNumber: '',
+      ifscCode: '',
+      accountHolderName: '',
+      upiId: '',
+      payeeName: '',
+      gstNumber: '',
+      address: '',
+      city: '',
+      district: '',
+      pincode: '',
+    );
+  }
+
   factory AppSettings.fromMap(Map<String, dynamic> data) {
     String getName() {
       final name = data['tenant_name'] ?? data['tenantName'] ?? data['companyName'] ?? data['company_name'] ?? data['businessName'] ?? data['business_name'];

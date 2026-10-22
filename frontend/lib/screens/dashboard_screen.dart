@@ -40,6 +40,8 @@ import '../providers/shell_provider.dart'; // NEW
 import '../utils/responsive.dart';
 import '../l10n/app_localizations.dart'; // NEW
 
+import '../services/auth_service.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -54,12 +56,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true; // Restored
   bool _pwaUpdateAvailable = false;
   
-  late Stream<List<BillModel>> _billsStream;
-  late Stream<List<ExpenseModel>> _expensesStream; // NEW
-  late Stream<AppSettings> _settingsStream;
+  Stream<List<BillModel>> _billsStream = Stream.value([]);
+  Stream<List<ExpenseModel>> _expensesStream = Stream.value([]);
+  Stream<AppSettings> _settingsStream = Stream.value(AppSettings.defaultSettings());
   StreamSubscription<AppSettings>? _settingsSub; // NEW
-  late Stream<List<Map<String, dynamic>>> _notificationStream;
-  late Stream<List<CalendarEvent>> _calendarStream;
+  Stream<List<Map<String, dynamic>>> _notificationStream = Stream.value([]);
+  Stream<List<CalendarEvent>> _calendarStream = Stream.value([]);
 
   SharedPreferences? _prefs; // Class member
   bool? _previousReadOnlyMode; // Track for transition triggers
@@ -68,6 +70,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _billsStream = BillsService().streamBills();
+    _expensesStream = ExpenseService().streamExpenses();
+    _settingsStream = SettingsService().streamSettings();
     _loadAllData();
   }
 
@@ -145,7 +150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadAllData() async {
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = AuthService().currentUser ?? Supabase.instance.client.auth.currentUser;
     if (user != null) {
       try {
         // Parallel Fetch
@@ -184,20 +189,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             }
             
             _settingsStream = SettingsService().streamSettings();
-          _settingsSub?.cancel();
-          _settingsSub = _settingsStream.listen((s) {
-            if (mounted) setState(() => _appSettings = s);
-          });
-          
-          _expensesStream = ExpenseService().streamExpenses(); // NEW
-          
-          if (_tenantId != null) {
-              _notificationStream = Supabase.instance.client
-                  .from('notifications')
-                  .stream(primaryKey: ['id'])
-                  .eq('tenant_id', _tenantId!);
+            _settingsSub?.cancel();
+            _settingsSub = _settingsStream.listen((s) {
+              if (mounted) setState(() => _appSettings = s);
+            });
+            
+            _expensesStream = ExpenseService().streamExpenses(); // NEW
+            
+            if (_tenantId != null && _tenantId!.isNotEmpty) {
+              try {
+                _notificationStream = Supabase.instance.client
+                    .from('notifications')
+                    .stream(primaryKey: ['id'])
+                    .eq('tenant_id', _tenantId!);
+              } catch (_) {
+                _notificationStream = Stream.value([]);
+              }
               
-              _calendarStream = CalendarService().streamEvents(tenantId: _tenantId!);
+              try {
+                _calendarStream = CalendarService().streamEvents(tenantId: _tenantId!);
+              } catch (_) {
+                _calendarStream = Stream.value([]);
+              }
             } else {
               _notificationStream = Stream.value([]);
               _calendarStream = Stream.value([]);
@@ -209,11 +222,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       } catch (e) {
         debugPrint('Error loading dashboard data: $e');
         if (mounted) {
-          setState(() => _isLoading = false);
+          setState(() {
+            _billsStream = BillsService().streamBills();
+            _expensesStream = ExpenseService().streamExpenses();
+            _settingsStream = SettingsService().streamSettings();
+            _isLoading = false;
+          });
         }
       }
     } else {
-        if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _billsStream = BillsService().streamBills();
+          _expensesStream = ExpenseService().streamExpenses();
+          _settingsStream = SettingsService().streamSettings();
+          _isLoading = false;
+        });
+      }
     }
   }
   

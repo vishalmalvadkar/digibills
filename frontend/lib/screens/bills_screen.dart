@@ -6,6 +6,7 @@ import '../models/bill_model.dart';
 import '../models/user_model.dart';
 import '../services/bills_service.dart';
 import '../services/user_service.dart';
+import '../services/auth_service.dart';
 
 import '../utils/snackbar_helper.dart';
 import '../theme/app_colors.dart';
@@ -55,13 +56,19 @@ class _BillsScreenState extends State<BillsScreen> {
 
   Future<void> _loadUser() async {
     try {
-      final uid = Supabase.instance.client.auth.currentUser?.id;
+      final uid = AuthService().currentUser?.id ?? Supabase.instance.client.auth.currentUser?.id;
       if (uid != null) {
         final user = await UserService().getUser(uid);
         if (mounted) {
           setState(() {
             _currentUser = user;
             _initBillsStream(uid); // Initialize Stream
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _billsStream = _billsService.streamBills();
           });
         }
       }
@@ -87,7 +94,7 @@ class _BillsScreenState extends State<BillsScreen> {
 
   // Method to handle Pull-to-Refresh
   Future<void> _handleRefresh() async {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+    final uid = AuthService().currentUser?.id ?? Supabase.instance.client.auth.currentUser?.id;
     if (uid != null) {
       // 1. Reload User Data
       await _loadUser(); 

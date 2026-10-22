@@ -17,6 +17,7 @@ import '../l10n/app_localizations.dart'; // NEW
 import 'package:provider/provider.dart';
 import '../models/user_model.dart'; // NEW
 import '../services/user_service.dart'; // NEW
+import '../services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW
 
 class MainNavigation extends StatefulWidget {
@@ -73,7 +74,7 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
   }
   
   Future<void> _loadUser() async {
-    final uid = Supabase.instance.client.auth.currentUser?.id;
+    final uid = AuthService().currentUser?.id ?? Supabase.instance.client.auth.currentUser?.id;
     if (uid != null) {
       final user = await UserService().getUser(uid);
       if (mounted) {

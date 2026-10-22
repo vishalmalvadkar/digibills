@@ -18,7 +18,7 @@ class NotificationService {
 
   Future<void> checkNotifications(BuildContext context) async {
     try {
-      final user = _supabase.auth.currentUser;
+      final user = _authService.currentUser ?? _supabase.auth.currentUser;
       if (user == null) return;
 
       // 1. Get Client Details to check License

@@ -87,7 +87,7 @@ class PlatformGovernanceService {
         'last_active_at': DateTime.now().toIso8601String(),
       }).eq('uid', uid);
     } catch (e) {
-      print('Error auditing user: $e');
+      // Supabase is optional in local backend mode; ignore gracefully
     }
   }
 
@@ -101,7 +101,6 @@ class PlatformGovernanceService {
       
       return List<Map<String, dynamic>>.from(users);
     } catch (e) {
-      print('Error fetching version audit: $e');
       return [];
     }
   }

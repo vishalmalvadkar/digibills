@@ -56,6 +56,9 @@ class SettingsService {
   }
 
   Stream<AppSettings> streamSettings() {
+    if (_cachedSettings != null) {
+      Timer.run(() => _settingsController.add(_cachedSettings!));
+    }
     fetchSettings();
     return _settingsController.stream;
   }
