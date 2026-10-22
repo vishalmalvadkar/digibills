@@ -16,32 +16,39 @@ class PwaUpdateService {
   void init() {
     if (!kIsWeb) return;
 
-    // Check if serviceWorker is supported
-    if (html.window.navigator.serviceWorker == null) return;
+    try {
+      // Check if serviceWorker is supported
+      final sw = html.window.navigator.serviceWorker;
+      if (sw == null) return;
 
-    html.window.navigator.serviceWorker!.getRegistration().then((registration) {
-      if (registration != null) {
-        // 1. Check if there's already a waiting worker
-        if (registration.waiting != null) {
-          _waitingWorker = registration.waiting;
-          updateAvailable.value = true;
-        }
-
-        // 2. Listen for new updates
-        registration.addEventListener('updatefound', (event) {
-          final newWorker = registration.installing;
-          if (newWorker != null) {
-            newWorker.addEventListener('statechange', (event) {
-              if (newWorker.state == 'installed' &&
-                  html.window.navigator.serviceWorker!.controller != null) {
-                _waitingWorker = newWorker;
-                updateAvailable.value = true;
-              }
-            });
+      sw.getRegistration().then((dynamic registration) {
+        if (registration != null && registration is html.ServiceWorkerRegistration) {
+          // 1. Check if there's already a waiting worker
+          if (registration.waiting != null) {
+            _waitingWorker = registration.waiting;
+            updateAvailable.value = true;
           }
-        });
-      }
-    });
+
+          // 2. Listen for new updates
+          registration.addEventListener('updatefound', (event) {
+            final newWorker = registration.installing;
+            if (newWorker != null) {
+              newWorker.addEventListener('statechange', (event) {
+                if (newWorker.state == 'installed' &&
+                    sw.controller != null) {
+                  _waitingWorker = newWorker;
+                  updateAvailable.value = true;
+                }
+              });
+            }
+          });
+        }
+      }).catchError((_) {
+        // Service worker might not be registered in local dev environment
+      });
+    } catch (_) {
+      // Ignore service worker errors in unsupported web environments
+    }
   }
 
   void reloadApp() {

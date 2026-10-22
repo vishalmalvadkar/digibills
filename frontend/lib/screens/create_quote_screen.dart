@@ -412,8 +412,11 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
                     BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4)),
                   ],
                 ),
-                child: Column(
-                  children: [
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Column(
+                    children: [
                      TextFormField(
                         controller: _customerController,
                         onChanged: (val) => _generateClientId(val),
@@ -623,6 +626,7 @@ class _CreateQuoteScreenState extends State<CreateQuoteScreen> {
                   ],
                 ),
               ),
+            ),
             ],
           ),
         ),

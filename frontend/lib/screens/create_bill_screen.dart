@@ -1413,7 +1413,9 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                       ),
                       child: Column(
                         children: [
-                          SwitchListTile(
+                          Material(
+                            color: Colors.transparent,
+                            child: SwitchListTile(
                             title: Text(
                               AppLocalizations.of(context)?.transportDetails ?? 'Add e-Way Bill Details',
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -1426,6 +1428,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                             onChanged: (val) => setState(() => _showEwayBillDetails = val),
                             activeColor: Colors.orange,
                             contentPadding: EdgeInsets.zero,
+                          ),
                           ),
                           if (_showEwayBillDetails) ...[
                             const SizedBox(height: 12),

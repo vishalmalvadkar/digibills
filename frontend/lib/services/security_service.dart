@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
@@ -53,38 +54,25 @@ class SecurityService {
   }
 
   Future<bool> authenticatedBiometric() async {
-    final isSupported = await _auth.isDeviceSupported();
-    if (!isSupported) return false;
-
+    if (kIsWeb) return false;
     try {
-      // LocalAuth 3.0.0 uses AuthenticationOptions class but it's passed as a value, 
-      // ensuring const is valid only if constructor is const.
-      // However user reported "No named parameter options".
-      // This implies we should try named parameters directly for older compat OR 
-      // maybe AuthenticationOptions is NOT the name of the parameter?
-      // Wait, 2.x had options. 
-      // Let's try to remove options for now to confirm basic auth works.
-      // Or use named parameters used in 2.x before options class wrapped them.
-      // Actually, if "options" named param is missing, it suggests it expects "useErrorDialogs" etc directly?
-      // But 3.0.0 docs say options IS used. 
-      // Let's assume the installed version is actually older? No, it said 3.0.0.
-      // Maybe the error "No named parameter options" is misleading because of the const error?
-      // I'll define options variable without const and try passing it.
-      // If that fails, I'll fallback to named params.
-      // Actually, I'll use the most standard form:
+      final isSupported = await _auth.isDeviceSupported();
+      if (!isSupported) return false;
+
       return await _auth.authenticate(
         localizedReason: 'Please authenticate to access DigiInvi',
       );
-    } on PlatformException catch (e) {
-      if (e.code == 'NotAvailable') { // Use string literal
-        // Biometrics not available
-        return false;
-      }
+    } catch (_) {
       return false;
     }
   }
 
   Future<bool> canCheckBiometrics() async {
-    return await _auth.canCheckBiometrics;
+    if (kIsWeb) return false;
+    try {
+      return await _auth.canCheckBiometrics;
+    } catch (_) {
+      return false;
+    }
   }
 }

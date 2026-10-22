@@ -142,7 +142,9 @@ class _PaymentRemindersCardState extends State<PaymentRemindersCard> {
                    timeColor = AppColors.success;
                  }
 
-                 return ListTile(
+                  return Material(
+                    color: Colors.transparent,
+                    child: ListTile(
                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                    title: Text(
                      bill.customerName,
@@ -191,7 +193,8 @@ class _PaymentRemindersCardState extends State<PaymentRemindersCard> {
                      // Actually, let's keep it simple and just do the WhatsApp action as requested primarily.
                      // But clicking might be nice. 
                    },
-                 );
+                  ),
+                  );
                },
              ),
              if (pendingBills.length > 5)
