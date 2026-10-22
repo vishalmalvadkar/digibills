@@ -142,6 +142,7 @@ class ClientService {
   }) async {
     final client = ClientModel(
       clientId: '',
+      tenantId: _api.currentTenantId,
       businessName: businessName,
       ownerName: ownerName,
       email: email,
