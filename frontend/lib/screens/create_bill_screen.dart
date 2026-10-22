@@ -886,6 +886,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
 
                     // State Dropdown (NEW)
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _selectedState.isNotEmpty ? _selectedState : null,
                       decoration: InputDecoration(
                         labelText: AppLocalizations.of(context)?.placeOfSupply ?? 'Client State (Place of Supply)',
@@ -908,7 +909,10 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                         'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 
                         'Uttarakhand', 'West Bengal', 'Delhi', 'Jammu & Kashmir', 'Ladakh', 'Puducherry', 'Chandigarh',
                         'Dadra and Nagar Haveli and Daman and Diu', 'Andaman and Nicobar Islands', 'Lakshadweep'
-                      ].map((state) => DropdownMenuItem(value: state, child: Text(state))).toList(),
+                      ].map((state) => DropdownMenuItem(
+                        value: state, 
+                        child: Text(state, overflow: TextOverflow.ellipsis),
+                      )).toList(),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => _selectedState = val);
@@ -1368,6 +1372,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                                 Expanded(
                                   flex: 3, 
                                   child: DropdownButtonFormField<String>(
+                                    isExpanded: true,
                                     value: _paymentModes[index],
                                     items: ['Cash', 'UPI', 'Cheque', 'Net Banking'].map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 13)))).toList(),
                                     onChanged: (val) {
@@ -1473,8 +1478,9 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
+                              isExpanded: true,
                               value: _selectedTransportMode,
-                              items: _transportModes.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                              items: _transportModes.map((m) => DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis))).toList(),
                               onChanged: (val) => setState(() => _selectedTransportMode = val ?? 'Road'),
                               decoration: InputDecoration(
                                 labelText: 'Transport Mode',
@@ -1573,11 +1579,12 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
 
                     // Dropdown
                     DropdownButtonFormField<String>(
+                      isExpanded: true,
                       value: _paymentStatus,
                       items: ['Pending', 'Paid', 'Partial'].map((status) { 
                         return DropdownMenuItem(
                           value: status,
-                          child: Text(status),
+                          child: Text(status, overflow: TextOverflow.ellipsis),
                         );
                       }).toList(),
                       onChanged: (value) {

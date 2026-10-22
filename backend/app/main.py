@@ -79,9 +79,9 @@ async def get_platform_config():
         "updated_at": "2026-10-22T00:00:00"
     }]
 
-@app.get("/rest/v1/{table_name}")
+@app.api_route("/rest/v1/{table_name}", methods=["GET", "POST", "PATCH", "PUT", "DELETE"])
 async def get_supabase_rest_compat(table_name: str):
-    # Returns empty list for notifications, calendar_events, etc.
+    # Returns empty list or single object for notifications, calendar_events, users, etc.
     return []
 
 @app.websocket("/realtime/v1/websocket")
