@@ -150,7 +150,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
   Future<void> _shareInvoice() async {
     final phone = _whatsappCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''); 
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No WhatsApp number available')));
+      SnackbarHelper.showWarning(context, 'No WhatsApp number available');
       return;
     }
 
@@ -162,12 +162,15 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
     if (await canLaunchUrl(whatsappUrl)) {
       await launchUrl(whatsappUrl);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch WhatsApp')));
+      SnackbarHelper.showError(context, 'Could not launch WhatsApp');
     }
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      SnackbarHelper.showWarning(context, 'Please complete all required fields correctly');
+      return;
+    }
     
     setState(() => _isSaving = true);
     
@@ -211,22 +214,12 @@ class _ClientDetailScreenState extends State<ClientDetailScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Client updated successfully'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        Navigator.pop(context);
+        SnackbarHelper.showGlobalSuccess('Client updated successfully: ${_businessNameCtrl.text.trim()}');
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        SnackbarHelper.showError(context, 'Error updating client: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

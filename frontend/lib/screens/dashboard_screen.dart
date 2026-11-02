@@ -21,8 +21,11 @@ import '../utils/dashboard_calculator.dart';
 import '../utils/report_calculator.dart';
 import '../utils/report_type.dart';
 import '../theme/app_colors.dart';
+import '../utils/snackbar_helper.dart';
 import '../services/calendar_service.dart';
 import '../services/user_service.dart';
+import '../services/client_service.dart';
+import '../models/client_model.dart';
 import 'notification_center_screen.dart';
 import 'quotes_list_screen.dart';
 import 'inventory_screen.dart';
@@ -163,8 +166,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ]);
 
         final userModel = results[0] as UserModel?;
-        final settings = results[1] as AppSettings?;
+        var settings = results[1] as AppSettings?;
         final prefs = results[2] as SharedPreferences; // NEW
+
+        // Ensure exact client businessName provisioned by SuperAdmin is used
+        if (userModel != null && userModel.role == 'client') {
+          try {
+            final client = await ClientService().getClientById(userModel.tenantId.isNotEmpty ? userModel.tenantId : user.id);
+            if (client != null && client.businessName.isNotEmpty) {
+              if (settings != null) {
+                settings = AppSettings(
+                  tenantName: client.businessName,
+                  contactEmail: settings.contactEmail.isNotEmpty ? settings.contactEmail : client.email,
+                  contactPhone: settings.contactPhone.isNotEmpty ? settings.contactPhone : client.whatsappNumber,
+                  bankName: settings.bankName,
+                  accountNumber: settings.accountNumber,
+                  ifscCode: settings.ifscCode,
+                  accountHolderName: settings.accountHolderName,
+                  upiId: settings.upiId,
+                  payeeName: settings.payeeName,
+                  gstNumber: settings.gstNumber.isNotEmpty ? settings.gstNumber : client.gstNumber,
+                  address: settings.address,
+                  city: settings.city,
+                  district: settings.district,
+                  pincode: settings.pincode,
+                  state: settings.state.isNotEmpty ? settings.state : client.state,
+                  defaultGstRate: settings.defaultGstRate,
+                  printFormat: settings.printFormat,
+                  logoBase64: settings.logoBase64,
+                  logoWidth: settings.logoWidth,
+                  logoHeight: settings.logoHeight,
+                  mouPdfHeaderTitle: settings.mouPdfHeaderTitle,
+                  mouPdfSubHeader: settings.mouPdfSubHeader,
+                  showLogoOnPdf: settings.showLogoOnPdf,
+                  isAuditTrailEnabled: settings.isAuditTrailEnabled,
+                  invoicePrefix: settings.invoicePrefix,
+                  invoiceStartNumber: settings.invoiceStartNumber,
+                );
+              }
+            }
+          } catch (_) {}
+        }
 
         if (mounted) {
           setState(() {
@@ -193,7 +235,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _settingsStream = SettingsService().streamSettings();
             _settingsSub?.cancel();
             _settingsSub = _settingsStream.listen((s) {
-              if (mounted) setState(() => _appSettings = s);
+              if (mounted) {
+                if ((s.tenantName.isEmpty || s.tenantName == 'My Business') &&
+                    _currentUser?.name != null &&
+                    _currentUser!.name!.isNotEmpty &&
+                    _currentUser!.name != 'My Business') {
+                  setState(() => _appSettings = AppSettings(
+                    tenantName: _currentUser!.name!,
+                    contactEmail: s.contactEmail,
+                    contactPhone: s.contactPhone,
+                    bankName: s.bankName,
+                    accountNumber: s.accountNumber,
+                    ifscCode: s.ifscCode,
+                    accountHolderName: s.accountHolderName,
+                    upiId: s.upiId,
+                    payeeName: s.payeeName,
+                    gstNumber: s.gstNumber,
+                    address: s.address,
+                    city: s.city,
+                    district: s.district,
+                    pincode: s.pincode,
+                    state: s.state,
+                    defaultGstRate: s.defaultGstRate,
+                    printFormat: s.printFormat,
+                    logoBase64: s.logoBase64,
+                    logoWidth: s.logoWidth,
+                    logoHeight: s.logoHeight,
+                    mouPdfHeaderTitle: s.mouPdfHeaderTitle,
+                    mouPdfSubHeader: s.mouPdfSubHeader,
+                    showLogoOnPdf: s.showLogoOnPdf,
+                    isAuditTrailEnabled: s.isAuditTrailEnabled,
+                    invoicePrefix: s.invoicePrefix,
+                    invoiceStartNumber: s.invoiceStartNumber,
+                  ));
+                } else {
+                  setState(() => _appSettings = s);
+                }
+              }
             });
             
             _expensesStream = ExpenseService().streamExpenses(); // NEW
@@ -305,10 +383,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         return Column(
           children: [
-            if (!Responsive.isDesktop(context)) ...[
-              _buildHeader(context),
-              _buildBusinessProfileSection(context),
-            ],
             Expanded(
               child: Center(
                 child: Container(
@@ -346,36 +420,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                            const SizedBox(height: 32),
                         ],
 
-                        // 2. Shortcuts (Create Invoice, Sales Return) - Moved Up
+                        // 2. Shortcuts (Create Invoice, Purchase, Sales Return) - 3-Column Grid on Same Row
                         if (!LicenseScope.isReadOnlyMode(context)) ...[
-                          LayoutBuilder(
-                            builder: (context, constraints) {
+                          Builder(
+                            builder: (context) {
                               final canCreateBills = _currentUser?.role != 'staff' || (_currentUser?.permissions.contains('create_bills') ?? false);
                               final canManageReturns = _currentUser?.role != 'staff' || (_currentUser?.permissions.contains('manage_returns') ?? false);
-                              final isSmall = constraints.maxWidth < 420;
 
-                              final invoiceCard = canCreateBills
-                                  ? _buildShortcutCard(
-                                      context,
-                                      title: AppLocalizations.of(context)?.createInvoice ?? 'Create Invoice',
-                                      icon: Icons.add_circle_outline,
-                                      color1: const Color(0xFF11998e),
-                                      color2: const Color(0xFF38ef7d),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context, 
-                                          MaterialPageRoute(builder: (_) => const CreateBillScreen())
-                                        ).then((_) => _loadAllData());
-                                      },
-                                    )
-                                  : null;
+                              final invoiceCard = _buildShortcutCard(
+                                context,
+                                title: AppLocalizations.of(context)?.createInvoice ?? 'Create Invoice',
+                                icon: Icons.receipt_long_rounded,
+                                color1: const Color(0xFF10B981),
+                                color2: const Color(0xFF059669),
+                                isEnabled: canCreateBills,
+                                onTap: () {
+                                  if (!canCreateBills) {
+                                    SnackbarHelper.showWarning(context, 'You do not have permission to create invoices');
+                                    return;
+                                  }
+                                  Navigator.push(
+                                    context, 
+                                    MaterialPageRoute(builder: (_) => const CreateBillScreen())
+                                  ).then((_) => _loadAllData());
+                                },
+                              );
 
                               final purchaseCard = _buildShortcutCard(
                                 context,
                                 title: 'Purchase',
-                                icon: Icons.shopping_cart_outlined,
-                                color1: const Color(0xFF614385),
-                                color2: const Color(0xFF516395),
+                                icon: Icons.shopping_bag_outlined,
+                                color1: const Color(0xFF6366F1),
+                                color2: const Color(0xFF4F46E5),
+                                isEnabled: true,
                                 onTap: () {
                                   Navigator.push(
                                     context, 
@@ -384,50 +461,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 },
                               );
 
-                              final returnCard = canManageReturns
-                                  ? _buildShortcutCard(
-                                      context,
-                                      title: AppLocalizations.of(context)?.salesReturn ?? 'Sales Return',
-                                      icon: Icons.assignment_return_outlined,
-                                      color1: const Color(0xFFFF416C),
-                                      color2: const Color(0xFFFF4B2B),
-                                      onTap: () {
-                                        Navigator.push(
-                                          context, 
-                                          MaterialPageRoute(builder: (_) => const BillsScreen(initialIndex: 3))
-                                        );
-                                      },
-                                    )
-                                  : null;
-
-                              final activeCards = [
-                                if (invoiceCard != null) invoiceCard,
-                                purchaseCard,
-                                if (returnCard != null) returnCard,
-                              ];
-
-                              if (isSmall) {
-                                return Column(
-                                  children: [
-                                    for (int i = 0; i < activeCards.length; i++) ...[
-                                      Row(children: [activeCards[i]]),
-                                      if (i < activeCards.length - 1) const SizedBox(height: 10),
-                                    ],
-                                  ],
-                                );
-                              }
+                              final returnCard = _buildShortcutCard(
+                                context,
+                                title: AppLocalizations.of(context)?.salesReturn ?? 'Sales Return',
+                                icon: Icons.assignment_return_outlined,
+                                color1: const Color(0xFFF43F5E),
+                                color2: const Color(0xFFE11D48),
+                                isEnabled: canManageReturns,
+                                onTap: () {
+                                  if (!canManageReturns) {
+                                    SnackbarHelper.showWarning(context, 'You do not have permission to manage returns');
+                                    return;
+                                  }
+                                  Navigator.push(
+                                    context, 
+                                    MaterialPageRoute(builder: (_) => const BillsScreen(initialIndex: 3))
+                                  );
+                                },
+                              );
 
                               return Row(
                                 children: [
-                                  for (int i = 0; i < activeCards.length; i++) ...[
-                                    activeCards[i],
-                                    if (i < activeCards.length - 1) const SizedBox(width: 12),
-                                  ],
+                                  invoiceCard,
+                                  const SizedBox(width: 8),
+                                  purchaseCard,
+                                  const SizedBox(width: 8),
+                                  returnCard,
                                 ],
                               );
                             },
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
                         ],
 
                         // 3. Payment Reminders & Calendar - Moved Up
@@ -662,76 +726,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildBusinessProfileSection(BuildContext context) {
-  final settings = _appSettings;
-  if (settings == null) return const SizedBox.shrink();
+    final settings = _appSettings;
+    final businessName = (settings != null && settings.tenantName.isNotEmpty && settings.tenantName != 'My Business')
+        ? settings.tenantName
+        : (_currentUser?.name != null && _currentUser!.name!.isNotEmpty && _currentUser!.name != 'My Business'
+            ? _currentUser!.name!
+            : (settings?.tenantName ?? ''));
 
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: BoxDecoration(
-      color: AppColors.primary.withOpacity(0.03),
-      border: Border(bottom: BorderSide(color: AppColors.border.withOpacity(0.5))),
-    ),
-    child: Row(
-      children: [
-        // Business Logo
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
+    if (businessName.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.04),
+        border: Border(bottom: BorderSide(color: AppColors.border.withOpacity(0.6))),
+      ),
+      child: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: Responsive.isDesktop(context) ? 1200 : double.infinity,
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: settings.logoBase64 != null && settings.logoBase64!.isNotEmpty
-                ? Image.memory(
-                    base64Decode(settings.logoBase64!),
-                    key: ValueKey(settings.logoBase64!), // Force rebuild on new logo
-                    fit: BoxFit.contain,
-                  )
-                : const Icon(Icons.business, color: AppColors.textGrey, size: 24),
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Business Info
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Row(
             children: [
-              Text(
-                settings.tenantName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Row(
-                children: [
-                  const Icon(Icons.verified_user, size: 12, color: AppColors.success),
-                  const SizedBox(width: 4),
-                  Text(
-                    AppLocalizations.of(context)?.activeBusiness ?? 'Active Business',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+              // Business Logo
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: settings?.logoBase64 != null && settings!.logoBase64!.isNotEmpty
+                      ? Image.memory(
+                          base64Decode(settings.logoBase64!),
+                          key: ValueKey(settings.logoBase64!),
+                          fit: BoxFit.contain,
+                        )
+                      : const Icon(Icons.storefront_outlined, color: AppColors.primary, size: 24),
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Business Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      businessName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                        letterSpacing: -0.3,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.verified, size: 14, color: AppColors.success),
+                        const SizedBox(width: 4),
+                        Text(
+                          AppLocalizations.of(context)?.activeBusiness ?? 'Active Business',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
-        // Settings Icon or Switch
-
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
 
 
@@ -827,18 +913,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       if (context.mounted) {
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)?.renewalSent ?? "Renewal request sent successfully! We will contact you soon."),
-            backgroundColor: AppColors.success,
-          ),
+        SnackbarHelper.showSuccess(
+          context,
+          AppLocalizations.of(context)?.renewalSent ?? "Renewal request sent successfully! We will contact you soon.",
         );
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)?.renewalFailed(e) ?? "Failed to send request: $e"), backgroundColor: AppColors.error),
+        SnackbarHelper.showError(
+          context,
+          AppLocalizations.of(context)?.renewalFailed(e) ?? "Failed to send request: $e",
         );
       }
     }
@@ -890,7 +975,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _card(String title, double value, int count, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -905,28 +990,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textGrey,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '₹${value.toStringAsFixed(0)}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '₹${value.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ),
+            const SizedBox(height: 2),
             Text(
-              '$count Bills', 
+              '$count Bills',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: AppColors.textGrey,
                 fontWeight: FontWeight.w500,
               ),
@@ -937,44 +1032,101 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildShortcutCard(BuildContext context, {required String title, required IconData icon, required Color color1, required Color color2, required VoidCallback onTap}) {
+  Widget _buildShortcutCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color1,
+    required Color color2,
+    required VoidCallback onTap,
+    bool isEnabled = true,
+  }) {
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Ink(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            decoration: BoxDecoration(
-               gradient: LinearGradient(
-                 colors: [color1, color2],
-                 begin: Alignment.topLeft,
-                 end: Alignment.bottomRight,
-               ),
-               borderRadius: BorderRadius.circular(20),
-               boxShadow: [
-                 BoxShadow(
-                   color: color1.withOpacity(0.4),
-                   blurRadius: 12,
-                   offset: const Offset(0, 6),
-                 ),
-               ],
+      child: Opacity(
+        opacity: isEnabled ? 1.0 : 0.45,
+        child: Container(
+          height: 94,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.border,
+              width: 1,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white, size: 32),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+              BoxShadow(
+                color: color1.withOpacity(0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(16),
+              splashColor: color1.withOpacity(0.12),
+              highlightColor: color1.withOpacity(0.05),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [color1, color2],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: color1.withOpacity(0.32),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          icon,
+                          color: Colors.white,
+                          size: 19,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    SizedBox(
+                      height: 28,
+                      child: Center(
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11.5,
+                            height: 1.15,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'mou_management_hub_screen.dart';
+import '../../utils/snackbar_helper.dart';
 
 class AdminGovernanceTab extends StatefulWidget {
   const AdminGovernanceTab({super.key});
@@ -113,15 +114,11 @@ class _AdminGovernanceTabState extends State<AdminGovernanceTab> {
       await PlatformGovernanceService().updateConfig(newConfig);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Platform configuration updated')),
-        );
+        SnackbarHelper.showSuccess(context, 'Platform configuration updated successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        SnackbarHelper.showError(context, 'Error updating configuration: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

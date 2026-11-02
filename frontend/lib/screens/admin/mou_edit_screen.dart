@@ -8,6 +8,7 @@ import '../../models/settings_model.dart'; // NEW
 import '../../services/mou_service.dart';
 import '../../services/settings_service.dart'; // NEW
 import '../../theme/app_colors.dart';
+import '../../utils/snackbar_helper.dart';
 
 class MouEditScreen extends StatefulWidget {
   final MouTemplateModel? template;
@@ -162,11 +163,11 @@ This Agreement is between **{{company_name}}** (Service Provider) and **{{client
       
       if (mounted) {
          Navigator.pop(context);
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved Template & Header Config')));
+         SnackbarHelper.showGlobalSuccess('Saved Template & Header Config');
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+         SnackbarHelper.showError(context, 'Error saving template: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

@@ -7,6 +7,7 @@ import '../../services/settings_service.dart'; // NEW
 import '../../utils/pdf_year_end_helper.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/license_scope.dart'; // NEW
+import '../../utils/snackbar_helper.dart';
 
 
 class YearEndSummaryScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class _YearEndSummaryScreenState extends State<YearEndSummaryScreen> {
       final settings = await SettingsService().fetchSettings();
       await PdfYearEndHelper().generateAndDownload(data, settings);
     } catch (e) {
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppLocalizations.of(context)?.error ?? 'Error'}: $e")));
+      if (mounted) SnackbarHelper.showError(context, "${AppLocalizations.of(context)?.error ?? 'Error'}: $e");
     } finally {
       if(mounted) setState(() => _isExporting = false);
     }

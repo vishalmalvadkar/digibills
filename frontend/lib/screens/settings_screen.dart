@@ -24,6 +24,7 @@ import '../providers/locale_provider.dart'; // NEW
 import '../l10n/app_localizations.dart'; // NEW
 import '../utils/validators.dart'; // NEW
 import 'settings/manage_users/manage_staff_screen.dart'; // NEW
+import '../services/client_service.dart';
 
 
 
@@ -149,12 +150,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Client Business Name Logic:
       // If current user is a Client, ensure Business Name set by Superadmin is loaded
       if (_currentUser != null && _currentUser!.role == 'client') {
+        if (_currentUser!.name != null && _currentUser!.name!.isNotEmpty && _currentUser!.name != 'My Business') {
+          _tenantController.text = _currentUser!.name!;
+        }
         try {
           final client = await ClientService().getClientById(_currentUser!.tenantId.isNotEmpty ? _currentUser!.tenantId : uid);
           if (client != null && client.businessName.isNotEmpty) {
             _tenantController.text = client.businessName;
-          } else if (_currentUser!.name != null && _currentUser!.name!.isNotEmpty && _tenantController.text.isEmpty) {
-            _tenantController.text = _currentUser!.name!;
           }
         } catch (e) {
           debugPrint('Error fetching client business name: $e');
@@ -908,7 +910,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: AppColors.textGrey, fontSize: 14)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
         ],
       ),
     );

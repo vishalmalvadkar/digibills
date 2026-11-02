@@ -482,12 +482,22 @@ class _EditBillScreenState extends State<EditBillScreen> {
                   const SizedBox(height: 16),
                   
                   // Summary
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Sub Total'), Text('₹${_calculateSubTotal().toStringAsFixed(2)}')]),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Tax Amount'), Text('₹${_calculateTaxAmount().toStringAsFixed(2)}')]),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    const Flexible(child: Text('Sub Total', overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    FittedBox(fit: BoxFit.scaleDown, child: Text('₹${_calculateSubTotal().toStringAsFixed(2)}')),
+                  ]),
+                  const SizedBox(height: 6),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    const Flexible(child: Text('Tax Amount', overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    FittedBox(fit: BoxFit.scaleDown, child: Text('₹${_calculateTaxAmount().toStringAsFixed(2)}')),
+                  ]),
                   const Divider(),
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    const Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text('₹${_calculateTotal().toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary)),
+                    const Flexible(child: Text('Total Amount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18), overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 8),
+                    FittedBox(fit: BoxFit.scaleDown, child: Text('₹${_calculateTotal().toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary))),
                   ]),
                ]),
 

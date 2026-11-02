@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../utils/validators.dart'; // NEW
 import 'package:flutter/services.dart'; // NEW
+import '../../utils/snackbar_helper.dart';
 
 class AddClientScreen extends StatefulWidget {
   const AddClientScreen({super.key});
@@ -103,7 +104,15 @@ class _AddClientScreenState extends State<AddClientScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      SnackbarHelper.showWarning(context, 'Please complete all required fields correctly');
+      return;
+    }
+
+    if (_businessNameCtrl.text.trim().isEmpty) {
+      SnackbarHelper.showWarning(context, 'Business Name is required');
+      return;
+    }
     
     setState(() => _isSaving = true);
     
@@ -144,16 +153,12 @@ class _AddClientScreenState extends State<AddClientScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Client provisioned successfully')),
-        );
-        Navigator.pop(context);
+        SnackbarHelper.showGlobalSuccess('Client provisioned successfully: ${_businessNameCtrl.text.trim()}');
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        SnackbarHelper.showError(context, 'Failed to provision client: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

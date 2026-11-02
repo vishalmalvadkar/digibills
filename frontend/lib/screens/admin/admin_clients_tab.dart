@@ -6,6 +6,7 @@ import 'client_detail_screen.dart';
 import 'add_client_screen.dart'; // NEW
 import 'package:url_launcher/url_launcher.dart'; // NEW
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // NEW
+import '../../utils/snackbar_helper.dart';
 
 class AdminClientsTab extends StatefulWidget {
   const AdminClientsTab({super.key});
@@ -63,11 +64,14 @@ class _AdminClientsTabState extends State<AdminClientsTab> {
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final res = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const AddClientScreen()),
                     );
+                    if (res == true) {
+                      await ClientService().refreshClients();
+                    }
                   },
                   icon: const Icon(Icons.add),
                   label: const Text('Add New Client'),
@@ -152,7 +156,7 @@ class _ClientListCard extends StatelessWidget {
   Future<void> _shareInvoice(BuildContext context) async {
     final phone = client.whatsappNumber.replaceAll(RegExp(r'[^0-9]'), '');
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No WhatsApp number available')));
+      SnackbarHelper.showWarning(context, 'No WhatsApp number available');
       return;
     }
 
@@ -166,7 +170,7 @@ class _ClientListCard extends StatelessWidget {
       await launchUrl(whatsappUrl);
     } else {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch WhatsApp')));
+        SnackbarHelper.showError(context, 'Could not launch WhatsApp');
       }
     }
   }
@@ -205,13 +209,16 @@ class _ClientListCard extends StatelessWidget {
     }
 
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final res = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ClientDetailScreen(client: client),
           ),
         );
+        if (res == true) {
+          await ClientService().refreshClients();
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -335,22 +342,10 @@ class _ClientListCard extends StatelessWidget {
               Navigator.pop(context); // Close dialog
               try {
                 await ClientService().deleteClient(client.clientId);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Client deleted successfully'),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                }
+                SnackbarHelper.showGlobalSuccess('Client deleted successfully');
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error deleting client: $e'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
+                  SnackbarHelper.showError(context, 'Error deleting client: $e');
                 }
               }
             },

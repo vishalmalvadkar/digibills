@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.db.session import get_db
-from app.models.entities import User, Setting
+from app.models.entities import User, Setting, Client
 from app.schemas.schemas import Token, LoginRequest, UserCreate, UserOut
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.api.deps import get_current_user
@@ -27,6 +27,25 @@ async def login_for_access_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Check if there is a client record provisioned by SuperAdmin for this email/tenant
+    client_res = await db.execute(
+        select(Client).where((Client.email == user.email) | (Client.client_id == user.tenant_id) | (Client.tenant_id == user.tenant_id))
+    )
+    client_obj = client_res.scalars().first()
+    if client_obj and client_obj.business_name:
+        user.name = client_obj.business_name
+        setting = await db.get(Setting, user.tenant_id)
+        if setting:
+            setting.tenant_name = client_obj.business_name
+        else:
+            db.add(Setting(
+                tenant_id=user.tenant_id,
+                tenant_name=client_obj.business_name,
+                contact_email=user.email
+            ))
+        await db.commit()
+        await db.refresh(user)
+
     access_token = create_access_token(subject=user.uid)
     return {
         "access_token": access_token,
@@ -59,6 +78,27 @@ async def login(
             detail="Invalid email or password",
         )
     
+    # Check if there is a client record provisioned by SuperAdmin for this email/tenant
+    client_res = await db.execute(
+        select(Client).where((Client.email == user.email) | (Client.client_id == user.tenant_id) | (Client.tenant_id == user.tenant_id))
+    )
+    client_obj = client_res.scalars().first()
+    if client_obj and client_obj.business_name:
+        # Guarantee user's name is set to the exact business_name
+        user.name = client_obj.business_name
+        # Guarantee tenant setting has the exact business_name
+        setting = await db.get(Setting, user.tenant_id)
+        if setting:
+            setting.tenant_name = client_obj.business_name
+        else:
+            db.add(Setting(
+                tenant_id=user.tenant_id,
+                tenant_name=client_obj.business_name,
+                contact_email=user.email
+            ))
+        await db.commit()
+        await db.refresh(user)
+
     access_token = create_access_token(subject=user.uid)
     return {
         "access_token": access_token,
@@ -94,14 +134,21 @@ async def signup(
     new_uid = str(uuid.uuid4())
     tenant_id = req.tenant_id or new_uid
 
+    # Check if there is an existing client record created by SuperAdmin for this email
+    client_res = await db.execute(select(Client).where(Client.email == req.email))
+    client_obj = client_res.scalars().first()
+    business_title = client_obj.business_name if (client_obj and client_obj.business_name) else (req.name or "My Business")
+    if client_obj:
+        tenant_id = client_obj.tenant_id or client_obj.client_id or tenant_id
+
     new_user = User(
         uid=new_uid,
         email=req.email,
         hashed_password=get_password_hash(req.password),
-        name=req.name or req.email.split("@")[0],
+        name=business_title,
         role=req.role or "client",
         tenant_id=tenant_id,
-        license={
+        license=client_obj.license if (client_obj and client_obj.license) else {
             "isActive": True,
             "plan": "premium",
             "startDate": "2026-01-01T00:00:00.000Z",
@@ -110,14 +157,19 @@ async def signup(
     )
     db.add(new_user)
 
-    # Initialize default settings for new tenant
+    # Initialize or update settings for tenant with the exact business name
     existing_setting = await db.get(Setting, tenant_id)
     if not existing_setting:
         db.add(Setting(
             tenant_id=tenant_id,
-            tenant_name=req.name or "My Business",
-            contact_email=req.email
+            tenant_name=business_title,
+            contact_email=req.email,
+            state=client_obj.state if (client_obj and client_obj.state) else "",
+            gst_number=client_obj.gst_number if (client_obj and client_obj.gst_number) else "",
+            contact_phone=client_obj.whatsapp_number if (client_obj and hasattr(client_obj, 'whatsapp_number')) else ""
         ))
+    else:
+        existing_setting.tenant_name = business_title
 
     await db.commit()
     await db.refresh(new_user)

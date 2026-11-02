@@ -16,30 +16,38 @@ async def get_settings(
     db: AsyncSession = Depends(get_db)
 ):
     setting = await db.get(Setting, current_user.tenant_id)
-    if not setting:
-        # Check if there is an official business_name created by SuperAdmin in Client table
-        client_res = await db.execute(
-            select(Client).where(
-                (Client.client_id == current_user.tenant_id) | 
-                (Client.tenant_id == current_user.tenant_id) | 
-                (Client.email == current_user.email)
-            )
+    # Check if there is an official business_name created by SuperAdmin in Client table
+    client_res = await db.execute(
+        select(Client).where(
+            (Client.client_id == current_user.tenant_id) | 
+            (Client.tenant_id == current_user.tenant_id) | 
+            (Client.email == current_user.email)
         )
-        client_obj = client_res.scalars().first()
-        business_title = (
-            client_obj.business_name if (client_obj and client_obj.business_name)
-            else (current_user.name or "My Business")
-        )
+    )
+    client_obj = client_res.scalars().first()
+    business_title = (
+        client_obj.business_name if (client_obj and client_obj.business_name)
+        else (current_user.name if (current_user.name and current_user.name != "My Business") else None)
+    )
 
+    if not setting:
         setting = Setting(
             tenant_id=current_user.tenant_id,
-            tenant_name=business_title,
-            contact_email=current_user.email,
+            tenant_name=business_title or "My Business",
+            contact_email=client_obj.email if (client_obj and client_obj.email) else current_user.email,
             state=client_obj.state if (client_obj and client_obj.state) else "",
             gst_number=client_obj.gst_number if (client_obj and client_obj.gst_number) else "",
             contact_phone=client_obj.whatsapp_number if (client_obj and hasattr(client_obj, 'whatsapp_number')) else ""
         )
         db.add(setting)
+        await db.commit()
+        await db.refresh(setting)
+    elif business_title and (not setting.tenant_name or setting.tenant_name == "My Business" or current_user.role == "client"):
+        setting.tenant_name = business_title
+        if client_obj and client_obj.state and not setting.state:
+            setting.state = client_obj.state
+        if client_obj and client_obj.gst_number and not setting.gst_number:
+            setting.gst_number = client_obj.gst_number
         await db.commit()
         await db.refresh(setting)
 

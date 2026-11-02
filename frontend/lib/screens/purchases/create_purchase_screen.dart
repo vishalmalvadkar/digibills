@@ -664,14 +664,23 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
   }
 
   Widget _summaryRow(String label, String value, {bool isBold = false, double fontSize = 14}) {
-// ... (unchanged)
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: fontSize, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: isBold ? AppColors.textDark : AppColors.textGrey)),
-          Text(value, style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: isBold ? AppColors.primary : AppColors.textDark)),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: fontSize, fontWeight: isBold ? FontWeight.bold : FontWeight.normal, color: isBold ? AppColors.textDark : AppColors.textGrey),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value, style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: isBold ? AppColors.primary : AppColors.textDark)),
+          ),
         ],
       ),
     );

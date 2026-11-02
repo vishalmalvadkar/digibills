@@ -10,6 +10,7 @@ import '../../services/settings_service.dart';
 import '../../widgets/license_scope.dart'; 
 import 'income_tax_report_screen.dart'; 
 import '../../services/ca_export_service.dart'; // NEW
+import '../../utils/snackbar_helper.dart';
 
 class AccountingReportsScreen extends StatefulWidget {
   const AccountingReportsScreen({super.key});
@@ -124,7 +125,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
       // Special Handling for GSTR
       if (_selectedType == ReportType.gstr1) {
          if (format == ExportFormat.csv) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('GSTR-1 is available in Excel only')));
+            SnackbarHelper.showWarning(context, 'GSTR-1 is available in Excel only');
             return;
          }
          final bytes = await _gstrService.generateGSTR1(_startDate, _endDate);
@@ -135,9 +136,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
       }
       
       if (_selectedType == ReportType.gstr3b) {
-         // GSTR-3B isn't a file export usually, but we can export the summary as CSV/Excel if needed
-         // For now, let's just show a snackbar or export summary
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.gstr3bMsg ?? 'View Summary below. Export coming soon.')));
+         SnackbarHelper.showInfo(context, AppLocalizations.of(context)?.gstr3bMsg ?? 'View Summary below. Export coming soon.');
          return;
       }
 
@@ -155,7 +154,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
       }
 
       if (data.isEmpty) {
-        if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.noDataReport ?? 'No data found for selected period')));
+        if (mounted) SnackbarHelper.showWarning(context, AppLocalizations.of(context)?.noDataReport ?? 'No data found for selected period');
         return;
       }
 
@@ -174,7 +173,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
       await FileDownloadHelper.downloadFile(bytes, fileName, extension);
 
     } catch (e) {
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) SnackbarHelper.showError(context, 'Error: $e');
     } finally {
       if(mounted) setState(() => _isLoading = false);
     }
@@ -236,7 +235,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
          ];
       }
     } catch (e) {
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) SnackbarHelper.showError(context, 'Error: $e');
     } finally {
       if(mounted) setState(() => _isLoading = false);
     }
@@ -281,7 +280,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
   Future<void> _exportPdf() async {
     // Only support PDF for Income/Expense/Receivables for now
     if (_selectedType == ReportType.gstr1 || _selectedType == ReportType.gstr3b) {
-       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.pdfNotSupportedGstr ?? 'PDF not supported for GSTR reports yet.')));
+       SnackbarHelper.showWarning(context, AppLocalizations.of(context)?.pdfNotSupportedGstr ?? 'PDF not supported for GSTR reports yet.');
        return;
     }
     setState(() => _isLoading = true);
@@ -311,7 +310,7 @@ class _AccountingReportsScreenState extends State<AccountingReportsScreen> {
       await FileDownloadHelper.downloadFile(bytes, '${_selectedType.name}_report', 'pdf');
       
     } catch (e) {
-       if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error generating PDF: $e')));
+       if (mounted) SnackbarHelper.showError(context, 'Error generating PDF: $e');
     } finally {
       if(mounted) setState(() => _isLoading = false);
     }

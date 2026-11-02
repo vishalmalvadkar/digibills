@@ -8,6 +8,7 @@ import '../widgets/license_scope.dart';
 import '../theme/app_colors.dart';
 import '../screens/event_creation_sheet.dart';
 import '../models/calendar_event.dart';
+import '../utils/snackbar_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EmbeddedCalendar extends StatefulWidget {
@@ -471,12 +472,9 @@ class _EmbeddedCalendarState extends State<EmbeddedCalendar> {
       await _calendarService.saveEvent(eventWithTenant);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(eventToEdit != null ? 'Event updated successfully!' : 'Event saved successfully!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
+        SnackbarHelper.showSuccess(
+          context,
+          eventToEdit != null ? 'Event updated successfully!' : 'Event saved successfully!',
         );
       }
     }

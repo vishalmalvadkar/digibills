@@ -322,14 +322,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     return ListTile(
                       tileColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
-                      title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('${p.scancode} • ₹${p.unitPrice} / ${p.unit}'),
+                      title: Text(
+                        p.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        '${p.scancode} • ₹${p.unitPrice} / ${p.unit}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _showProductDialog(product: p)),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red), 
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                            onPressed: () => _showProductDialog(product: p),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                             onPressed: () => _confirmDelete(p),
                           ),
                         ],

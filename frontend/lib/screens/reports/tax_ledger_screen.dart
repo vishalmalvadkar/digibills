@@ -7,6 +7,7 @@ import '../../theme/app_colors.dart';
 import '../../utils/pdf_tax_report_helper.dart';
 import '../../utils/file_download_helper.dart'; 
 import '../../widgets/license_scope.dart'; 
+import '../../utils/snackbar_helper.dart'; 
 
 class TaxLedgerScreen extends StatefulWidget {
   const TaxLedgerScreen({super.key});
@@ -78,7 +79,7 @@ class _TaxLedgerScreenState extends State<TaxLedgerScreen> with SingleTickerProv
       await PdfTaxReportHelper().generateAndDownloadReport(data, period, settings);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppLocalizations.of(context)?.error ?? 'Error'}: $e")));
+        SnackbarHelper.showError(context, "${AppLocalizations.of(context)?.error ?? 'Error'}: $e");
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);
@@ -99,11 +100,11 @@ class _TaxLedgerScreenState extends State<TaxLedgerScreen> with SingleTickerProv
       await FileDownloadHelper.downloadFile(bytes, 'GST_Ledger_$period', 'xlsx', text: AppLocalizations.of(context)?.exportReport('GST_Ledger_$period'));
       
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)?.excelExported ?? 'Excel exported successfully')));
+         SnackbarHelper.showSuccess(context, AppLocalizations.of(context)?.excelExported ?? 'Excel exported successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppLocalizations.of(context)?.error ?? 'Error'}: $e")));
+        SnackbarHelper.showError(context, "${AppLocalizations.of(context)?.error ?? 'Error'}: $e");
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);

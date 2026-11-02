@@ -97,9 +97,7 @@ class FileDownloadHelper {
            onAction: () async {
              final result = await OpenFilex.open(savedFile!.path, type: effectiveMimeType);
              if (result.type != ResultType.done) {
-               SnackbarHelper.scaffoldMessengerKey.currentState?.showSnackBar(
-                 SnackBar(content: Text('Could not open file: ${result.message}'), backgroundColor: AppColors.error)
-               );
+               SnackbarHelper.showGlobalError('Could not open file: ${result.message}');
              }
            },
          );
@@ -111,9 +109,7 @@ class FileDownloadHelper {
 
     } catch (e) {
       _hideDownloadBanner();
-      SnackbarHelper.scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(content: Text('Download failed: $e'), backgroundColor: AppColors.error)
-      );
+      SnackbarHelper.showGlobalError('Download failed: $e');
       rethrow;
     }
   }

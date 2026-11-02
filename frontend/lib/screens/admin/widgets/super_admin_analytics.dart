@@ -6,6 +6,7 @@ import '../../../services/client_service.dart';
 import 'package:intl/intl.dart';
 import '../../../models/client_model.dart';
 import '../../../theme/app_colors.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// 1. Monthly Recurring Revenue (MRR) Trend
 class RevenueTrendChart extends StatelessWidget {
@@ -607,17 +608,13 @@ class LicenseRequestsCard extends StatelessWidget {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Client record not found')),
-          );
+          SnackbarHelper.showWarning(context, 'Client record not found');
         }
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context); // Close loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        SnackbarHelper.showError(context, 'Error fetching client: $e');
       }
     }
   }

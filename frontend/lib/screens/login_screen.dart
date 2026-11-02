@@ -99,24 +99,18 @@ class _LoginScreenState extends State<LoginScreen> {
   void _forgotPassword() async {
       // ... Keep existing logic
     if (_emailController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email address first')),
-      );
+      SnackbarHelper.showWarning(context, 'Please enter your email address first');
       return;
     }
 
     try {
       await _authService.sendPasswordResetEmail(_emailController.text.trim());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset email sent')),
-        );
+        SnackbarHelper.showSuccess(context, 'Password reset email sent successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+        SnackbarHelper.showError(context, 'Error: ${e.toString()}');
       }
     }
   }

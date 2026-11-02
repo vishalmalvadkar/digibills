@@ -48,6 +48,51 @@ async def get_clients(
         for c in clients
     ]
 
+@router.get("/{client_id}", response_model=dict)
+async def get_client_by_id(
+    client_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    if current_user.role == "superAdmin":
+        result = await db.execute(
+            select(Client).where(
+                (Client.client_id == client_id) | (Client.tenant_id == client_id)
+            )
+        )
+    else:
+        result = await db.execute(
+            select(Client).where(
+                (Client.client_id == client_id) | 
+                (Client.tenant_id == client_id) | 
+                (Client.tenant_id == current_user.tenant_id) |
+                (Client.email == current_user.email)
+            )
+        )
+    client = result.scalars().first()
+    if not client:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    return {
+        "client_id": client.client_id,
+        "tenant_id": client.tenant_id,
+        "business_name": client.business_name,
+        "owner_name": client.owner_name,
+        "email": client.email,
+        "whatsapp_number": client.whatsapp_number,
+        "state": client.state,
+        "gst_number": client.gst_number,
+        "status": client.status,
+        "license": client.license,
+        "mou_accepted": client.mou_accepted,
+        "mou_meta": client.mou_meta,
+        "amount": client.amount,
+        "payment_mode": client.payment_mode,
+        "payment_status": client.payment_status,
+        "tax_percentage": client.tax_percentage,
+        "created_at": client.created_at.isoformat() if client.created_at else None,
+    }
+
 @router.post("", response_model=dict)
 async def create_client(
     client_in: ClientCreate,
@@ -117,6 +162,11 @@ async def create_client(
         client.tenant_id,
         {"table": "clients", "action": "INSERT", "data": res}
     )
+    if current_user.tenant_id != client.tenant_id:
+        await manager.broadcast_to_tenant(
+            current_user.tenant_id,
+            {"table": "clients", "action": "INSERT", "data": res}
+        )
 
     return res
 
@@ -186,6 +236,11 @@ async def update_client(
         client.tenant_id,
         {"table": "clients", "action": "UPDATE", "data": res}
     )
+    if current_user.tenant_id != client.tenant_id:
+        await manager.broadcast_to_tenant(
+            current_user.tenant_id,
+            {"table": "clients", "action": "UPDATE", "data": res}
+        )
 
     return res
 
@@ -195,19 +250,36 @@ async def delete_client(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(Client).where(Client.client_id == client_id, Client.tenant_id == current_user.tenant_id)
-    )
+    if current_user.role == "superAdmin":
+        result = await db.execute(
+            select(Client).where(
+                (Client.client_id == client_id) | (Client.tenant_id == client_id)
+            )
+        )
+    else:
+        result = await db.execute(
+            select(Client).where(
+                ((Client.client_id == client_id) | (Client.tenant_id == client_id)) &
+                (Client.tenant_id == current_user.tenant_id)
+            )
+        )
     client = result.scalars().first()
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
+
+    tenant_to_notify = client.tenant_id
 
     await db.delete(client)
     await db.commit()
 
     await manager.broadcast_to_tenant(
-        current_user.tenant_id,
-        {"table": "clients", "action": "DELETE", "data": {"client_id": client_id}}
+        tenant_to_notify,
+        {"table": "clients", "action": "DELETE", "data": {"client_id": client.client_id}}
     )
+    if current_user.tenant_id != tenant_to_notify:
+        await manager.broadcast_to_tenant(
+            current_user.tenant_id,
+            {"table": "clients", "action": "DELETE", "data": {"client_id": client.client_id}}
+        )
 
     return {"message": "Client deleted successfully"}

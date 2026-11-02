@@ -656,8 +656,15 @@ class _InvoicesListTabState extends State<InvoicesListTab> with AutomaticKeepAli
                 children: [
                   Icon(Icons.calendar_today, size: 14, color: Colors.grey[500]),
                   const SizedBox(width: 4),
-                  Text(date, style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500)),
-                  const Spacer(),
+                  Flexible(
+                    child: Text(
+                      date,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
 
                   GestureDetector(
                     onTap: () => LicenseScope.isReadOnlyMode(context) ? null : _showStatusSheet(context, bill),

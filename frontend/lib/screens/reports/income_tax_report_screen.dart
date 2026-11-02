@@ -5,6 +5,7 @@ import '../../services/report_service.dart';
 import '../../services/settings_service.dart'; // NEW
 import '../../models/settings_model.dart'; // NEW
 import 'package:intl/intl.dart';
+import '../../utils/snackbar_helper.dart';
 
 
 class IncomeTaxReportScreen extends StatefulWidget {
@@ -45,7 +46,7 @@ class _IncomeTaxReportScreenState extends State<IncomeTaxReportScreen> {
         _taxData = data;
       });
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) SnackbarHelper.showError(context, 'Error: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

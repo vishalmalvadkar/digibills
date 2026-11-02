@@ -7,6 +7,7 @@ import '../../services/supplier_bill_service.dart';
 import '../../theme/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'review_bill_screen.dart';
+import '../../utils/snackbar_helper.dart';
 
 class SupplierBillsScreen extends StatefulWidget {
   final bool showAppBar;
@@ -199,11 +200,11 @@ class _SupplierBillsScreenState extends State<SupplierBillsScreen> {
       try {
         await _service.deleteBill(billId);
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bill deleted successfully')));
+           SnackbarHelper.showSuccess(context, 'Bill deleted successfully');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          SnackbarHelper.showError(context, 'Error deleting bill: $e');
         }
       } finally {
         if (mounted) setState(() => _isProcessing = false);

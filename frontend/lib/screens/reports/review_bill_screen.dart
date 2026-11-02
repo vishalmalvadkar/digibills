@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../../utils/snackbar_helper.dart';
 
 class ReviewBillScreen extends StatefulWidget {
   final SupplierBillModel bill;
@@ -103,9 +104,12 @@ class _ReviewBillScreenState extends State<ReviewBillScreen> {
       );
 
       await _service.addBill(finalBill);
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) {
+        SnackbarHelper.showGlobalSuccess('Supplier bill saved successfully');
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) SnackbarHelper.showError(context, 'Error: $e');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

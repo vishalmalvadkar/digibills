@@ -17,6 +17,7 @@ import '../models/client_receivable_model.dart';
 import '../models/settings_model.dart';
 import '../utils/file_download_helper.dart';
 import '../utils/pdf_balance_sheet_helper.dart';
+import '../utils/snackbar_helper.dart';
 
 class CaExportService {
   final _trialBalanceService = TrialBalanceService();
@@ -104,14 +105,14 @@ class CaExportService {
       if (zipBytes != null) {
         await FileDownloadHelper.downloadFile(Uint8List.fromList(zipBytes), 'CAPack_$fyString', 'zip');
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('CA Pack downloaded successfully!')));
+          SnackbarHelper.showSuccess(context, 'CA Pack downloaded successfully!');
         }
       }
 
     } catch (e) {
       debugPrint('CA Export Error: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error generating CA Pack: $e')));
+        SnackbarHelper.showError(context, 'Error generating CA Pack: $e');
       }
     }
   }

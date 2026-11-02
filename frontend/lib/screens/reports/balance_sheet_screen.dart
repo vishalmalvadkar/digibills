@@ -8,6 +8,7 @@ import '../../services/settings_service.dart';
 import '../../utils/pdf_balance_sheet_helper.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/license_scope.dart';
+import '../../utils/snackbar_helper.dart';
 
 class BalanceSheetScreen extends StatefulWidget {
   const BalanceSheetScreen({super.key});
@@ -70,7 +71,7 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> with SingleTick
       final settings = await SettingsService().fetchSettings();
       await _pdfHelper.generateAndDownload(data, settings);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${AppLocalizations.of(context)?.exportFailed ?? 'Export Failed:'} $e")));
+      if (mounted) SnackbarHelper.showError(context, "${AppLocalizations.of(context)?.exportFailed ?? 'Export Failed:'} $e");
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }

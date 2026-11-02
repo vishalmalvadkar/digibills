@@ -13,6 +13,7 @@ import 'creation_menu_screen.dart'; // NEW import
 import '../utils/responsive.dart';
 import '../core/responsive/breakpoints.dart';
 import '../widgets/desktop_top_bar.dart';
+import '../widgets/universal_top_header.dart';
 import '../providers/shell_provider.dart';
 import '../l10n/app_localizations.dart'; // NEW
 import 'package:provider/provider.dart';
@@ -30,6 +31,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObserver {
   int _currentIndex = 0;
+  bool _isHeaderScrolled = false;
   final ShellState _shellState = ShellState();
   final GlobalKey<NavigatorState> _desktopNavigatorKey = GlobalKey<NavigatorState>();
   UserModel? _currentUser; // NEW
@@ -134,6 +136,7 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
                 onDestinationSelected: (index) {
                   setState(() {
                     _currentIndex = index;
+                    _isHeaderScrolled = false;
                   });
                   
                   _updateShellState(_validIndices[index]);
@@ -222,41 +225,57 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
                 value: _shellState,
                 child: Column(
                   children: [
-                    if (!isCompact) 
-                      DesktopTopBar(
-                        onNavigateToSettings: () {
-                          // Check if settings is in valid indices
-                          final settingsIndex = _validIndices.indexOf(4);
-                          if (settingsIndex != -1) {
-                            setState(() => _currentIndex = settingsIndex);
-                            _updateShellState(4);
-                            if (_desktopNavigatorKey.currentState != null) {
-                              _desktopNavigatorKey.currentState!.pushNamedAndRemoveUntil('/', (route) => false);
-                            }
+                    UniversalTopHeader(
+                      isScrolled: _isHeaderScrolled,
+                      onNavigateToSettings: () {
+                        // Check if settings is in valid indices
+                        final settingsIndex = _validIndices.indexOf(4);
+                        if (settingsIndex != -1) {
+                          setState(() {
+                            _currentIndex = settingsIndex;
+                            _isHeaderScrolled = false;
+                          });
+                          _updateShellState(4);
+                          if (_desktopNavigatorKey.currentState != null) {
+                            _desktopNavigatorKey.currentState!.pushNamedAndRemoveUntil('/', (route) => false);
                           }
-                        },
-                      ),
+                        }
+                      },
+                    ),
                   const PwaUpdateBanner(),
                   if (LicenseScope.isReadOnlyMode(context))
                     _buildReadOnlyBanner(),
                     
                   Expanded(
-                    child: isCompact 
-                      ? IndexedStack(
-                          index: _validIndices[_currentIndex], // Map visual index to actual screen index
-                          children: _screens, // Contains ALL screens
-                        )
-                      : Navigator(
-                          key: _desktopNavigatorKey,
-                          onGenerateRoute: (settings) {
-                            return MaterialPageRoute(
-                              builder: (context) => IndexedStack(
-                                index: _validIndices[_currentIndex],
-                                children: _screens,
-                              ),
-                            );
-                          },
-                        ),
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification.metrics.axis == Axis.vertical) {
+                          final pixels = notification.metrics.pixels;
+                          if (pixels > 15 && !_isHeaderScrolled) {
+                            setState(() => _isHeaderScrolled = true);
+                          } else if (pixels <= 5 && _isHeaderScrolled) {
+                            setState(() => _isHeaderScrolled = false);
+                          }
+                        }
+                        return false;
+                      },
+                      child: isCompact 
+                        ? IndexedStack(
+                            index: _validIndices[_currentIndex], // Map visual index to actual screen index
+                            children: _screens, // Contains ALL screens
+                          )
+                        : Navigator(
+                            key: _desktopNavigatorKey,
+                            onGenerateRoute: (settings) {
+                              return MaterialPageRoute(
+                                builder: (context) => IndexedStack(
+                                  index: _validIndices[_currentIndex],
+                                  children: _screens,
+                                ),
+                              );
+                            },
+                          ),
+                    ),
                   ),
                 ],
               ),
@@ -400,7 +419,10 @@ class _MainNavigationState extends State<MainNavigation> with WidgetsBindingObse
     final isSelected = _currentIndex == index;
     return InkWell(
       onTap: () {
-        setState(() => _currentIndex = index);
+        setState(() {
+          _currentIndex = index;
+          _isHeaderScrolled = false;
+        });
         _updateShellState(index);
       },
       borderRadius: BorderRadius.circular(12),

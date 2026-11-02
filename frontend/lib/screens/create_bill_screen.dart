@@ -585,7 +585,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
             : _whatsappController.text,
         createdAt: DateTime.now(),
         clientAddress: _addressController.text,
-        invoiceNumber: _invoiceNoController.text,
+        invoiceNumber: finalInvoiceNumber,
         items: items,
         payments: payments,
         tenantId: '', 
@@ -1392,6 +1392,9 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
 
                                 // Date Icon Button
                                 IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   onPressed: () async {
                                     final picked = await showDatePicker(
                                       context: context,
@@ -1405,14 +1408,17 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                                       });
                                     }
                                   },
-                                  icon: const Icon(Icons.calendar_today, color: AppColors.primary),
+                                  icon: const Icon(Icons.calendar_today, size: 18, color: AppColors.primary),
                                   tooltip: DateFormat('dd MMM').format(_paymentDates[index]),
                                 ),
 
                                 // Delete
                                 IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                                   onPressed: () => _removePayment(index),
-                                  icon: const Icon(Icons.close, color: AppColors.error),
+                                  icon: const Icon(Icons.close, size: 18, color: AppColors.error),
                                 ),
                               ],
                             ),
@@ -1513,10 +1519,20 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(AppLocalizations.of(context)?.subTotal ?? 'Subtotal', style: const TextStyle(color: AppColors.textDark)),
-                              Text(
-                                '₹${_calculateSubTotal().toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                              Flexible(
+                                child: Text(
+                                  AppLocalizations.of(context)?.subTotal ?? 'Subtotal',
+                                  style: const TextStyle(color: AppColors.textDark),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '₹${_calculateSubTotal().toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                ),
                               ),
                             ],
                           ),
@@ -1527,10 +1543,20 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text('Tax (${_taxController.text}%)', style: const TextStyle(color: AppColors.textDark)),
-                                  Text(
-                                    '+ ₹${_calculateTaxAmount().toStringAsFixed(2)}',
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                  Flexible(
+                                    child: Text(
+                                      'Tax (${_taxController.text}%)',
+                                      style: const TextStyle(color: AppColors.textDark),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      '+ ₹${_calculateTaxAmount().toStringAsFixed(2)}',
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1539,10 +1565,20 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(AppLocalizations.of(context)?.grandTotal ?? 'Total Amount', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                              Text(
-                                '₹${_calculateTotal().toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                              Flexible(
+                                child: Text(
+                                  AppLocalizations.of(context)?.grandTotal ?? 'Total Amount',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '₹${_calculateTotal().toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                ),
                               ),
                             ],
                           ),
@@ -1550,10 +1586,20 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(AppLocalizations.of(context)?.advancePaid ?? 'Advance Paid', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.success)),
-                              Text(
-                                '₹${_calculateAdvanceTotal().toStringAsFixed(2)}', // Use Sum of Payments
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.success),
+                              Flexible(
+                                child: Text(
+                                  AppLocalizations.of(context)?.advancePaid ?? 'Advance Paid',
+                                  style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.success),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '₹${_calculateAdvanceTotal().toStringAsFixed(2)}', // Use Sum of Payments
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.success),
+                                ),
                               ),
                             ],
                           ),
@@ -1561,10 +1607,20 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(AppLocalizations.of(context)?.balanceDue ?? 'Pending Amount', style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.error)),
-                              Text(
-                                '₹${(_calculateTotal() - _calculateAdvanceTotal()).toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.error),
+                              Flexible(
+                                child: Text(
+                                  AppLocalizations.of(context)?.balanceDue ?? 'Pending Amount',
+                                  style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.error),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  '₹${(_calculateTotal() - _calculateAdvanceTotal()).toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.error),
+                                ),
                               ),
                             ],
                           ),

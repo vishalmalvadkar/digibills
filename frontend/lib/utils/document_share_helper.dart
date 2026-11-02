@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../theme/app_colors.dart';
 import 'file_download_helper.dart';
+import 'snackbar_helper.dart';
 
 class DocumentShareHelper {
   /// Shows a bottom sheet with Share options (WhatsApp vs PDF)
@@ -103,9 +104,7 @@ class DocumentShareHelper {
         try {
            Navigator.of(context, rootNavigator: true).pop(); 
         } catch (_) {}
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share PDF: $e')),
-        );
+        SnackbarHelper.showError(context, 'Failed to share PDF: $e');
       }
     }
   }

@@ -4,6 +4,7 @@ import '../../models/settings_model.dart';
 import '../../services/settings_service.dart';
 import '../../theme/app_colors.dart';
 import 'mou_templates_screen.dart';
+import '../../utils/snackbar_helper.dart';
 
 class MouSettingsScreen extends StatefulWidget {
   const MouSettingsScreen({super.key});
@@ -43,9 +44,9 @@ class _MouSettingsScreenState extends State<MouSettingsScreen> {
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading settings: $e'), backgroundColor: AppColors.error),
-      );
+      if (mounted) {
+        SnackbarHelper.showError(context, 'Error loading settings: $e');
+      }
     }
   }
 
@@ -87,15 +88,11 @@ class _MouSettingsScreenState extends State<MouSettingsScreen> {
       _currentSettings = newSettings;
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('MOU Settings saved'), backgroundColor: AppColors.success),
-        );
+        SnackbarHelper.showSuccess(context, 'MOU Settings saved successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: AppColors.error),
-        );
+        SnackbarHelper.showError(context, 'Error saving settings: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

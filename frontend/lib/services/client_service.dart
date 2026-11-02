@@ -5,13 +5,16 @@ import '../models/bill_model.dart';
 import 'api_client.dart';
 
 class ClientService {
+  static final ClientService _instance = ClientService._internal();
+  factory ClientService() => _instance;
+
   final ApiClient _api = ApiClient();
   final List<ClientModel> _cachedClients = [];
   final StreamController<List<ClientModel>> _controller =
       StreamController<List<ClientModel>>.broadcast();
   bool _initialized = false;
 
-  ClientService() {
+  ClientService._internal() {
     _api.realtimeEvents.listen((event) {
       if (event['table'] == 'clients') {
         final action = event['action'];
@@ -42,7 +45,9 @@ class ClientService {
 
   void _sortAndEmit() {
     _cachedClients.sort((a, b) => a.businessName.toLowerCase().compareTo(b.businessName.toLowerCase()));
-    _controller.add(List.unmodifiable(_cachedClients));
+    if (!_controller.isClosed) {
+      _controller.add(List.unmodifiable(_cachedClients));
+    }
   }
 
   Future<void> _fetchInitial() async {
@@ -56,8 +61,14 @@ class ClientService {
         _sortAndEmit();
       }
     } catch (_) {
-      _controller.add(List.unmodifiable(_cachedClients));
+      if (!_controller.isClosed) {
+        _controller.add(List.unmodifiable(_cachedClients));
+      }
     }
+  }
+
+  Future<void> refreshClients() async {
+    await _fetchInitial();
   }
 
   Stream<List<ClientModel>> streamClients() {
@@ -99,19 +110,41 @@ class ClientService {
       'tax_percentage': taxPercentage,
     };
 
-    await _api.put('/api/v1/clients/$clientId', body: updateData);
+    final res = await _api.put('/api/v1/clients/$clientId', body: updateData);
+    if (res is Map<String, dynamic>) {
+      final updatedClient = ClientModel.fromMap(res);
+      final index = _cachedClients.indexWhere((c) => c.clientId == updatedClient.clientId);
+      if (index != -1) {
+        _cachedClients[index] = updatedClient;
+      } else {
+        _cachedClients.add(updatedClient);
+      }
+      _sortAndEmit();
+    } else {
+      await refreshClients();
+    }
   }
 
   Future<void> addClient(ClientModel client) async {
-    await _api.post('/api/v1/clients', body: client.toMap());
+    final res = await _api.post('/api/v1/clients', body: client.toMap());
+    if (res is Map<String, dynamic>) {
+      final newClient = ClientModel.fromMap(res);
+      _cachedClients.removeWhere((c) => c.clientId == newClient.clientId);
+      _cachedClients.add(newClient);
+      _sortAndEmit();
+    } else {
+      await refreshClients();
+    }
   }
 
   Future<void> deleteClient(String clientId) async {
     await _api.delete('/api/v1/clients/$clientId');
+    _cachedClients.removeWhere((c) => c.clientId == clientId || c.tenantId == clientId);
+    _sortAndEmit();
   }
 
   Future<ClientModel?> getClientById(String clientId) async {
-    final cached = _cachedClients.where((c) => c.clientId == clientId).firstOrNull;
+    final cached = _cachedClients.where((c) => c.clientId == clientId || c.tenantId == clientId).firstOrNull;
     if (cached != null) return cached;
     try {
       final res = await _api.get('/api/v1/clients/$clientId');

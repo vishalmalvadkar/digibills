@@ -8,6 +8,7 @@ import '../widgets/license_scope.dart'; // NEW
 import '../theme/app_colors.dart';
 import 'event_creation_sheet.dart';
 import '../models/calendar_event.dart';
+import '../utils/snackbar_helper.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/responsive.dart';
@@ -594,13 +595,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       await _calendarService.saveEvent(eventWithTenant);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(eventToEdit != null ? 'Event updated successfully!' : 'Event saved successfully!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
+        SnackbarHelper.showSuccess(
+          context,
+          eventToEdit != null ? 'Event updated successfully!' : 'Event saved successfully!',
         );
       }
     }
@@ -624,14 +621,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               await _calendarService.deleteEvent(event.id);
 
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                     content: const Text('Event deleted'),
-                     backgroundColor: AppColors.error,
-                     behavior: SnackBarBehavior.floating,
-                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                );
+                SnackbarHelper.showSuccess(context, 'Event deleted successfully');
               }
             }, 
             child: const Text('Delete', style: TextStyle(color: AppColors.error)),

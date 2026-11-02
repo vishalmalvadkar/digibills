@@ -8,6 +8,7 @@ import '../../services/platform_governance_service.dart';
 import '../../services/mou_service.dart';
 import '../../theme/app_colors.dart';
 import 'mou_edit_screen.dart';
+import '../../utils/snackbar_helper.dart';
 
 class MouManagementHubScreen extends StatefulWidget {
   const MouManagementHubScreen({super.key});
@@ -77,15 +78,11 @@ class _MouManagementHubScreenState extends State<MouManagementHubScreen> {
       await PlatformGovernanceService().updateConfig(newConfig);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('MOU branding updated'), backgroundColor: AppColors.success),
-        );
+        SnackbarHelper.showSuccess(context, 'MOU branding updated successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
-        );
+        SnackbarHelper.showError(context, 'Error updating branding: $e');
       }
     } finally {
       if (mounted) setState(() => _isSavingBranding = false);

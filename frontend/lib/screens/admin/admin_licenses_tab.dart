@@ -5,6 +5,7 @@ import '../../models/license_model.dart';
 import '../../services/client_service.dart';
 import '../../theme/app_colors.dart';
 import 'license_invoice_screen.dart'; // NEW
+import '../../utils/snackbar_helper.dart';
 
 class AdminLicensesTab extends StatefulWidget {
   const AdminLicensesTab({super.key});
@@ -145,7 +146,7 @@ class _LicenseCard extends StatelessWidget {
        gstNumber: client.gstNumber,
      );
 
-     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Renewed ${client.businessName} for 1 year')));
+     SnackbarHelper.showSuccess(context, 'Renewed ${client.businessName} for 1 year');
   }
 
   @override

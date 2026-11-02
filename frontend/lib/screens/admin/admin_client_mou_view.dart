@@ -15,6 +15,7 @@ import '../../utils/mou_pdf_helper.dart';
 import '../../utils/file_download_helper.dart';
 import '../../services/platform_governance_service.dart';
 import '../../models/platform_config_model.dart';
+import '../../utils/snackbar_helper.dart';
 
 class AdminClientMouView extends StatefulWidget {
   final ClientModel client;
@@ -220,13 +221,13 @@ class _AdminClientMouViewState extends State<AdminClientMouView> {
                                }).eq('client_id', widget.client.clientId);
                                
                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fixed! Client now linked to your Branding.')));
+                                  SnackbarHelper.showGlobalSuccess('Fixed! Client now linked to your Branding.');
                                   setState(() { _isLoading = false; }); // Refresh UI
                                   Navigator.pop(context); // Close
                                }
                             } catch (e) {
                                if (mounted) setState(() => _isLoading = false);
-                               if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                               if (mounted) SnackbarHelper.showError(context, 'Error: $e');
                             }
                          }
                       },

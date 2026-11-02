@@ -48,9 +48,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // If email confirmation is enabled, they need to verify.
         // Assuming auto-login for now based on 'no code' instructions implying simple setup.
         
-        ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Account created successfully! Logging in...')),
-        );
+        SnackbarHelper.showGlobalSuccess('Account created successfully! Logging in...');
         
         // Return to Login or let AuthState stream handle navigation
         Navigator.of(context).pop(); 

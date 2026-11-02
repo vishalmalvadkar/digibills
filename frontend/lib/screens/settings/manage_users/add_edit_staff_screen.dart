@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../models/staff_model.dart';
 import '../../../../services/staff_service.dart';
 import '../../../../theme/app_colors.dart'; // NEW
+import '../../../../utils/snackbar_helper.dart';
 
 class AddEditStaffScreen extends StatefulWidget {
   final StaffModel? staff;
@@ -83,11 +84,14 @@ class _AddEditStaffScreenState extends State<AddEditStaffScreen> {
         );
       }
       
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        SnackbarHelper.showGlobalSuccess(widget.staff == null ? 'Staff member added successfully' : 'Staff details updated');
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        SnackbarHelper.showError(context, 'Error: $e');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

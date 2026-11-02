@@ -3,6 +3,7 @@ import '../../../../models/staff_model.dart';
 import '../../../../services/staff_service.dart';
 import '../../../../theme/app_colors.dart'; // NEW
 import 'add_edit_staff_screen.dart';
+import '../../../../utils/snackbar_helper.dart';
 
 class ManageStaffScreen extends StatefulWidget {
   const ManageStaffScreen({super.key});
@@ -45,11 +46,9 @@ class _ManageStaffScreenState extends State<ManageStaffScreen> {
               label: const Text('Invite Staff'),
               onPressed: () {
                 if (staffList.length >= 2) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Limit reached: You can add up to 2 staff members only.'),
-                      backgroundColor: Colors.red,
-                    ),
+                  SnackbarHelper.showWarning(
+                    context,
+                    'Limit reached: You can add up to 2 staff members only.',
                   );
                 } else {
                   Navigator.push(

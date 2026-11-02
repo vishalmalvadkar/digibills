@@ -585,8 +585,7 @@ class _BillViewScreenState extends State<BillViewScreen> {
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(1),
                   child: Container(color: AppColors.border, height: 1),
-                ),
-                actions: [
+                ),                actions: [
                   IconButton(
                     icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green, size: 20),
                     onPressed: () => PdfInvoiceHelper.openWhatsApp(context, bill, overrideSettings: _settings, creditNotes: _creditNotes),
@@ -597,38 +596,70 @@ class _BillViewScreenState extends State<BillViewScreen> {
                     onPressed: () => PdfInvoiceHelper.generateAndDownload(bill, overrideSettings: _settings, creditNotes: _creditNotes),
                     tooltip: 'Download Invoice',
                   ),
-                  if (!isReadOnly) ...[
-                      IconButton(
-                        icon: const Icon(Icons.print),
-                        onPressed: _printPdf,
-                      ),
-                      // REMOVED DUPLICATE UPDATE STATUS ICON
-                       IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: _editBill, // NEW
-                        tooltip: 'Edit',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.history),
-                        onPressed: _viewHistory, // NEW
-                        tooltip: 'History',
-                      ),
-                    /*
-                    // Native Android Bluetooth Print (Disabled for Build Stability)
-                    if (!kIsWeb && io.Platform.isAndroid)
-                        IconButton(
-                          icon: const Icon(Icons.bluetooth_audio, color: Colors.blue),
-                          tooltip: 'Bluetooth Print',
-                          onPressed: () {
-                             _showBluetoothDialog();
-                          },
+                  if (!isReadOnly)
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      tooltip: 'More actions',
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'print':
+                            _printPdf();
+                            break;
+                          case 'edit':
+                            _editBill();
+                            break;
+                          case 'history':
+                            _viewHistory();
+                            break;
+                          case 'delete':
+                            _confirmDelete();
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'print',
+                          child: Row(
+                            children: [
+                              Icon(Icons.print, size: 20, color: AppColors.textDark),
+                              SizedBox(width: 12),
+                              Text('Print PDF'),
+                            ],
+                          ),
                         ),
-                    */
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                      onPressed: _confirmDelete,
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 20, color: AppColors.textDark),
+                              SizedBox(width: 12),
+                              Text('Edit Bill'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'history',
+                          child: Row(
+                            children: [
+                              Icon(Icons.history, size: 20, color: AppColors.textDark),
+                              SizedBox(width: 12),
+                              Text('Bill History'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                              SizedBox(width: 12),
+                              Text('Delete', style: TextStyle(color: AppColors.error)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ]
                 ],
               ),
           body: SingleChildScrollView(

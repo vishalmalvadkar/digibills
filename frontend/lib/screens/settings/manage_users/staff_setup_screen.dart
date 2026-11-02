@@ -102,12 +102,7 @@ class _StaffSetupScreenState extends State<StaffSetupScreen> {
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created! Logging you in...'), 
-            backgroundColor: Colors.green
-          )
-        );
+        SnackbarHelper.showGlobalSuccess('Account created! Logging you in...');
         // Navigate to Home/Check Auth
         Navigator.pop(context); 
       }

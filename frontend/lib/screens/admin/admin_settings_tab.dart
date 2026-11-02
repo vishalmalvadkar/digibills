@@ -10,6 +10,7 @@ import '../../services/auth_service.dart'; // For Logout
 import '../../theme/app_colors.dart';
 import '../../utils/validators.dart'; 
 import 'mou_management_hub_screen.dart'; // NEW
+import '../../utils/snackbar_helper.dart';
 
 
 class AdminSettingsTab extends StatefulWidget {
@@ -151,15 +152,11 @@ class _AdminSettingsTabState extends State<AdminSettingsTab> {
       await _settingsService.saveSettings(newSettings);
       
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings saved successfully'), backgroundColor: AppColors.success),
-        );
+        SnackbarHelper.showSuccess(context, 'Settings saved successfully');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: AppColors.error),
-        );
+        SnackbarHelper.showError(context, 'Error saving settings: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

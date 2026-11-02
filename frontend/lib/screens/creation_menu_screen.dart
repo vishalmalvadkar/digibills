@@ -4,6 +4,7 @@ import 'create_bill_screen.dart';
 import 'create_quote_screen.dart'; // NEW
 import 'purchases/create_purchase_screen.dart';
 import 'create_credit_note_screen.dart'; // NEW import
+import '../utils/snackbar_helper.dart';
 
 class CreationMenuScreen extends StatelessWidget {
   const CreationMenuScreen({super.key});
@@ -174,8 +175,6 @@ class CreationMenuScreen extends StatelessWidget {
   }
 
   void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature Coming Soon!')),
-    );
+    SnackbarHelper.showInfo(context, '$feature Coming Soon!');
   }
 }

@@ -158,9 +158,13 @@ class _PaymentRemindersCardState extends State<PaymentRemindersCard> {
                          '#${bill.invoiceNumber} • ',
                          style: const TextStyle(fontSize: 12, color: AppColors.textGrey),
                        ),
-                       Text(
-                         timeText,
-                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: timeColor),
+                       Flexible(
+                         child: Text(
+                           timeText,
+                           maxLines: 1,
+                           overflow: TextOverflow.ellipsis,
+                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: timeColor),
+                         ),
                        ),
                      ],
                    ),

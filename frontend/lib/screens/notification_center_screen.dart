@@ -11,6 +11,7 @@ import '../models/calendar_event.dart'; // NEW
 import 'admin/license_invoice_screen.dart';
 import 'admin/client_detail_screen.dart';
 import '../services/client_service.dart';
+import '../utils/snackbar_helper.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -439,17 +440,13 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Client record not found')),
-          );
+          SnackbarHelper.showWarning(context, 'Client record not found');
         }
       }
     } catch (e) {
       if (context.mounted) {
         Navigator.pop(context); // Close loading indicator
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        SnackbarHelper.showError(context, 'Error: $e');
       }
     }
   }
