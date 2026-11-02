@@ -15,6 +15,7 @@ from app.api.v1.products import router as products_router
 from app.api.v1.clients import router as clients_router
 from app.api.v1.expenses import router as expenses_router
 from app.api.v1.settings import router as settings_router
+from app.api.v1.quotations import router as quotations_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -50,6 +51,7 @@ app.include_router(products_router, prefix=settings.API_V1_STR)
 app.include_router(clients_router, prefix=settings.API_V1_STR)
 app.include_router(expenses_router, prefix=settings.API_V1_STR)
 app.include_router(settings_router, prefix=settings.API_V1_STR)
+app.include_router(quotations_router, prefix=settings.API_V1_STR)
 
 # Realtime WebSocket Endpoint
 @app.websocket("/ws/{tenant_id}")

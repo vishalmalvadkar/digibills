@@ -116,18 +116,26 @@ class Quotation(Base):
     tenant_id = Column(String, index=True, nullable=False)
     quote_number = Column(String, index=True, nullable=False)
     customer_name = Column(String, nullable=False)
+    client_id = Column(String, default="")
     customer_phone = Column(String, default="")
+    whatsapp_number = Column(String, default="")
     customer_email = Column(String, default="")
     quote_date = Column(DateTime, default=datetime.utcnow)
     valid_until = Column(DateTime, nullable=True)
     items = Column(JSON, default=list)
     subtotal = Column(Float, default=0.0)
+    tax_percentage = Column(Float, default=0.0)
     tax_rate = Column(Float, default=0.0)
     tax_amount = Column(Float, default=0.0)
     total_amount = Column(Float, default=0.0)
-    status = Column(String, default="Draft")  # 'Draft', 'Sent', 'Accepted', 'Declined'
+    status = Column(String, default="Draft")  # 'Draft', 'Sent', 'Accepted', 'Declined', 'Converted'
     terms_and_conditions = Column(Text, nullable=True)
     notes = Column(Text, nullable=True)
+    doc_type = Column(String, default="Quote")
+    created_by = Column(String, nullable=True)
+    place_of_supply = Column(String, default="")
+    shipping_address = Column(String, nullable=True)
+    shipping_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Setting(Base):
