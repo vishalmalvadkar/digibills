@@ -68,7 +68,13 @@ class Bill(Base):
     payment_received_date = Column(DateTime, nullable=True)
     whatsapp_number = Column(String, default="")
     client_address = Column(String, default="")
+    client_city = Column(String, nullable=True)
     gst_number = Column(String, nullable=True)
+    eway_bill_no = Column(String, nullable=True)
+    vehicle_no = Column(String, nullable=True)
+    transport_mode = Column(String, nullable=True)
+    shipping_address = Column(String, nullable=True)
+    shipping_name = Column(String, nullable=True)
     items = Column(JSON, default=list)        # List of BillItem dicts
     payments = Column(JSON, default=list)     # List of PaymentRecord dicts
     created_by = Column(String, nullable=True)

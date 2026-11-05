@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart' as html;
 
@@ -11,28 +12,29 @@ class PwaUpdateService {
   PwaUpdateService._internal();
 
   final ValueNotifier<bool> updateAvailable = ValueNotifier<bool>(false);
-  html.ServiceWorker? _waitingWorker;
+  dynamic _waitingWorker;
 
   void init() {
     if (!kIsWeb) return;
 
-    try {
-      // Check if serviceWorker is supported and active in browser
-      final sw = html.window.navigator.serviceWorker;
-      if (sw == null) return;
+    runZonedGuarded(() {
+      try {
+        final nav = html.window.navigator;
+        final sw = nav.serviceWorker;
+        if (sw == null) return;
 
-      Future.delayed(const Duration(seconds: 1), () async {
-        try {
-          final dynamic regFuture = sw.getRegistration();
-          if (regFuture != null) {
-            final dynamic registration = await regFuture;
-            if (registration != null && registration is html.ServiceWorkerRegistration) {
-              if (registration.waiting != null) {
-                _waitingWorker = registration.waiting;
+        Future.delayed(const Duration(seconds: 1), () async {
+          try {
+            final dynamic reg = await sw.getRegistration().catchError((_) => null);
+            if (reg == null) return;
+
+            if (reg is html.ServiceWorkerRegistration) {
+              if (reg.waiting != null) {
+                _waitingWorker = reg.waiting;
                 updateAvailable.value = true;
               }
-              registration.addEventListener('updatefound', (event) {
-                final newWorker = registration.installing;
+              reg.addEventListener('updatefound', (event) {
+                final newWorker = reg.installing;
                 if (newWorker != null) {
                   newWorker.addEventListener('statechange', (event) {
                     if (newWorker.state == 'installed' && sw.controller != null) {
@@ -43,28 +45,26 @@ class PwaUpdateService {
                 }
               });
             }
+          } catch (_) {
+            // Dev web / localhost service worker registration absence is normal
           }
-        } catch (_) {
-          // Dev web / localhost service worker registration absence is normal
-        }
-      });
-    } catch (_) {
-      // Ignore unsupported web environments
-    }
+        });
+      } catch (_) {
+        // Ignore unsupported web environments
+      }
+    }, (error, stack) {
+      // Discard silent PWA registration errors
+    });
   }
 
   void reloadApp() {
     if (_waitingWorker != null) {
-      // Send skipWaiting message to the waiting worker
-      _waitingWorker!.postMessage({'type': 'SKIP_WAITING'});
+      try {
+        _waitingWorker.postMessage({'type': 'SKIP_WAITING'});
+      } catch (_) {}
     }
-    
-    // Force reload to pick up the new version
-    // We give it a tiny delay to ensure the message is processed if needed, 
-    // though typically the controller change will trigger behavior.
-    
-    // Note: Standard PWA logic often listens to 'controllerchange' to reload, 
-    // but a manual reload is also safe and explicit here.
-    html.window.location.reload();
+    try {
+      html.window.location.reload();
+    } catch (_) {}
   }
 }

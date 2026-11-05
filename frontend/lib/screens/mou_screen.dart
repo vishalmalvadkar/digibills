@@ -1,3 +1,5 @@
+import '../services/client_service.dart';
+import '../services/auth_service.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'dart:typed_data';
@@ -72,19 +74,8 @@ class _MouScreenState extends State<MouScreen> {
 
   Future<void> _loadData() async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw 'Not logged in';
-
-      // 1. Fetch Client
-      final clientData = await Supabase.instance.client
-          .from('clients')
-          .select()
-          .eq('client_id', user.id)
-          .maybeSingle();
-          
-      if (clientData == null) throw 'Client record not found';
-      
-      _client = ClientModel.fromMap(clientData);
+      _client = await ClientService().getClientById(AuthService().currentTenantId);
+      if (_client == null) throw 'Client record not found';
       
       // 2. Fetch Settings (for Company Name)
       _settings = await SettingsService().fetchTenantSettings(_client!.tenantId);

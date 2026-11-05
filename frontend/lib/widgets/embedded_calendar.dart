@@ -106,37 +106,49 @@ class _EmbeddedCalendarState extends State<EmbeddedCalendar> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('MMMM yyyy').format(_focusedDay),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                Expanded(
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(_focusedDay),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Navigate Back
                     IconButton(
                       icon: const Icon(Icons.chevron_left, color: AppColors.textDark),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                       onPressed: () {
                         setState(() {
                           _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1);
                         });
                       },
                     ),
+                    const SizedBox(width: 8),
                     // Navigate Forward
                     IconButton(
                       icon: const Icon(Icons.chevron_right, color: AppColors.textDark),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                       onPressed: () {
                         setState(() {
                           _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1);
                         });
                       },
                     ),
+                    const SizedBox(width: 8),
                     // Today
                     IconButton(
                       icon: const Icon(Icons.today, color: AppColors.primary),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                       onPressed: () {
                         setState(() {
                           _focusedDay = DateTime.now();

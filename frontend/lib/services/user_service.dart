@@ -1,3 +1,4 @@
+import 'client_service.dart';
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import '../models/user_model.dart';
@@ -48,6 +49,11 @@ class UserService {
   Future<UserModel?> getUser(String uid) async {
     final userMap = _api.currentUser;
     if (userMap != null) {
+      // Check if client record has latest mou_accepted
+      final client = await ClientService().getClientById(userMap['tenant_id'] ?? uid);
+      if (client != null) {
+        userMap['mou_accepted'] = client.mouAccepted;
+      }
       return UserModel.fromMap(userMap);
     }
     return null;

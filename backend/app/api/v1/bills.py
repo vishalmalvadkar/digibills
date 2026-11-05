@@ -54,7 +54,13 @@ async def get_bills(
             "payment_received_date": b.payment_received_date.isoformat() if b.payment_received_date else None,
             "whatsapp_number": b.whatsapp_number,
             "client_address": b.client_address,
+            "client_city": getattr(b, "client_city", None),
             "gst_number": b.gst_number,
+            "eway_bill_no": getattr(b, "eway_bill_no", None),
+            "vehicle_no": getattr(b, "vehicle_no", None),
+            "transport_mode": getattr(b, "transport_mode", None),
+            "shipping_address": getattr(b, "shipping_address", None),
+            "shipping_name": getattr(b, "shipping_name", None),
             "items": b.items,
             "payments": b.payments,
             "created_by": b.created_by,
@@ -62,6 +68,53 @@ async def get_bills(
         }
         for b in bills
     ]
+
+@router.get("/{bill_id}", response_model=dict)
+async def get_bill_by_id(
+    bill_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Bill).where(Bill.bill_id == bill_id, Bill.tenant_id == current_user.tenant_id)
+    )
+    b = result.scalars().first()
+    if not b:
+        raise HTTPException(status_code=404, detail="Bill not found")
+
+    return {
+        "bill_id": b.bill_id,
+        "tenant_id": b.tenant_id,
+        "invoice_number": b.invoice_number,
+        "customer_name": b.customer_name,
+        "client_id": b.client_id,
+        "service_name": b.service_name,
+        "bill_date": b.bill_date.isoformat() if b.bill_date else None,
+        "price": b.price,
+        "tax_percentage": b.tax_percentage,
+        "tax_amount": b.tax_amount,
+        "cgst_amount": b.cgst_amount,
+        "sgst_amount": b.sgst_amount,
+        "igst_amount": b.igst_amount,
+        "place_of_supply": b.place_of_supply,
+        "advance_amount": b.advance_amount,
+        "total_amount": b.total_amount,
+        "payment_status": b.payment_status,
+        "payment_received_date": b.payment_received_date.isoformat() if b.payment_received_date else None,
+        "whatsapp_number": b.whatsapp_number,
+        "client_address": b.client_address,
+        "client_city": getattr(b, "client_city", None),
+        "gst_number": b.gst_number,
+        "eway_bill_no": getattr(b, "eway_bill_no", None),
+        "vehicle_no": getattr(b, "vehicle_no", None),
+        "transport_mode": getattr(b, "transport_mode", None),
+        "shipping_address": getattr(b, "shipping_address", None),
+        "shipping_name": getattr(b, "shipping_name", None),
+        "items": b.items,
+        "payments": b.payments,
+        "created_by": b.created_by,
+        "created_at": b.created_at.isoformat() if b.created_at else None,
+    }
 
 @router.post("", response_model=dict)
 async def create_bill(
@@ -111,7 +164,13 @@ async def create_bill(
         "payment_received_date": new_bill.payment_received_date.isoformat() if new_bill.payment_received_date else None,
         "whatsapp_number": new_bill.whatsapp_number,
         "client_address": new_bill.client_address,
+        "client_city": getattr(new_bill, "client_city", None),
         "gst_number": new_bill.gst_number,
+        "eway_bill_no": getattr(new_bill, "eway_bill_no", None),
+        "vehicle_no": getattr(new_bill, "vehicle_no", None),
+        "transport_mode": getattr(new_bill, "transport_mode", None),
+        "shipping_address": getattr(new_bill, "shipping_address", None),
+        "shipping_name": getattr(new_bill, "shipping_name", None),
         "items": new_bill.items,
         "payments": new_bill.payments,
         "created_by": new_bill.created_by,
@@ -172,7 +231,13 @@ async def update_bill(
         "payment_received_date": bill.payment_received_date.isoformat() if bill.payment_received_date else None,
         "whatsapp_number": bill.whatsapp_number,
         "client_address": bill.client_address,
+        "client_city": getattr(bill, "client_city", None),
         "gst_number": bill.gst_number,
+        "eway_bill_no": getattr(bill, "eway_bill_no", None),
+        "vehicle_no": getattr(bill, "vehicle_no", None),
+        "transport_mode": getattr(bill, "transport_mode", None),
+        "shipping_address": getattr(bill, "shipping_address", None),
+        "shipping_name": getattr(bill, "shipping_name", None),
         "items": bill.items,
         "payments": bill.payments,
         "created_by": bill.created_by,

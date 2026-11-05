@@ -44,24 +44,16 @@ class _QuoteViewScreenState extends State<QuoteViewScreen> {
     });
 
     try {
-      QuoteModel? fetchedQuote;
-
-      // Only fetch if authenticated
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser != null) {
-          fetchedQuote = await QuoteService().getQuoteStream(widget.quoteId).first;
-      }
+      final fetchedQuote = await QuoteService().getQuoteById(widget.quoteId);
 
       if (fetchedQuote == null) {
         throw 'Quote not found';
       }
 
-      // 3. Fetch Settings (Authenticated)
-      // 3. Fetch Settings (Authenticated)
       AppSettings? fetchedSettings;
-      if (currentUser != null) {
-         fetchedSettings = await SettingsService().fetchSettings();
-      }
+      try {
+        fetchedSettings = await SettingsService().fetchSettings();
+      } catch (_) {}
 
       if (mounted) {
         setState(() {

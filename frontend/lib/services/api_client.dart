@@ -47,6 +47,13 @@ class ApiClient {
     connectWebSocket();
   }
 
+  Future<void> updateCurrentUser(Map<String, dynamic> updates) async {
+    if (_currentUser == null) return;
+    _currentUser!.addAll(updates);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('api_user', jsonEncode(_currentUser));
+  }
+
   Future<void> clearSession() async {
     _token = null;
     _currentUser = null;

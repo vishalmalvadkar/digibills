@@ -262,6 +262,8 @@ class BillModel {
       'shipping_address': shippingAddress,
       'shipping_name': shippingName,
       'client_city': clientCity, // NEW
+      'items': items.map((i) => i.toMap()).toList(),
+      'payments': payments.map((p) => p.toMap()).toList(),
     };
   }
 

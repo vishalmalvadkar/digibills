@@ -1,3 +1,4 @@
+import '../services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/bill_model.dart';
@@ -17,6 +18,7 @@ import '../services/settings_service.dart'; // NEW
 import 'dart:async'; // NEW for Debounce
 import '../models/settings_model.dart'; // NEW
 import '../models/client_model.dart';
+import '../models/license_model.dart';
 import '../providers/shell_provider.dart';
 import 'package:provider/provider.dart';
 import '../utils/responsive.dart';
@@ -25,7 +27,28 @@ import '../core/responsive/max_width_container.dart';
 import '../widgets/license_scope.dart';
 import '../l10n/app_localizations.dart'; 
 import '../services/sequence_service.dart'; // NEW
+import '../services/api_client.dart';
 import 'bill_view_screen.dart'; // Navigate after save
+
+class CustomerCandidate {
+  final String name;
+  final String clientId;
+  final String phone;
+  final String address;
+  final String city;
+  final String state;
+  final String gstNumber;
+
+  CustomerCandidate({
+    required this.name,
+    required this.clientId,
+    required this.phone,
+    this.address = '',
+    this.city = '',
+    this.state = '',
+    this.gstNumber = '',
+  });
+}
 
 class CreateBillScreen extends StatefulWidget {
   const CreateBillScreen({super.key});
@@ -57,6 +80,7 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
 
   // Data Lists
   List<BillModel> _allBills = [];
+  List<ClientModel> _allClients = [];
   List<ProductModel> _allProducts = [];
   final List<String> _unitOptions = ['qty', 'kg', 'g', 'L', 'ml', 'm', 'cm', 'pcs', 'box', 'pkt', 'doz', 'set'];
 
@@ -82,6 +106,8 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
   
   DateTime _billDate = DateTime.now();
   Timer? _debounce;
+  final FocusNode _customerFocusNode = FocusNode();
+  final FocusNode _clientIdFocusNode = FocusNode();
 
 
   @override
@@ -101,27 +127,114 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
     });
   }
 
+  List<CustomerCandidate> _getAllCustomerCandidates() {
+    final Map<String, CustomerCandidate> map = {};
+
+    // 1. Add from Bills history (direct customers billed by this tenant)
+    for (final b in _allBills) {
+      final name = b.customerName.trim();
+      if (name.isEmpty) continue;
+      final key = name.toLowerCase();
+      final existing = map[key];
+      map[key] = CustomerCandidate(
+        name: name,
+        clientId: b.clientId.isNotEmpty ? b.clientId : (existing?.clientId ?? ''),
+        phone: b.whatsappNumber.isNotEmpty ? b.whatsappNumber : (existing?.phone ?? ''),
+        address: b.clientAddress.isNotEmpty ? b.clientAddress : (existing?.address ?? ''),
+        city: (b.clientCity != null && b.clientCity!.isNotEmpty) ? b.clientCity! : (existing?.city ?? ''),
+        state: b.placeOfSupply.isNotEmpty ? b.placeOfSupply : (existing?.state ?? ''),
+        gstNumber: (b.gstNumber != null && b.gstNumber!.isNotEmpty) ? b.gstNumber! : (existing?.gstNumber ?? ''),
+      );
+    }
+
+    // 2. Add saved Customers from Clients directory (excluding current tenant/business user itself)
+    final currentTenantId = ApiClient().currentTenantId;
+    final currentUserId = ApiClient().currentUserId;
+    for (final c in _allClients) {
+      if (c.clientId == currentTenantId || c.clientId == currentUserId || c.tenantId == c.clientId) {
+        continue;
+      }
+      final name = c.businessName.trim().isNotEmpty ? c.businessName.trim() : c.ownerName.trim();
+      if (name.isEmpty) continue;
+      final key = name.toLowerCase();
+      if (!map.containsKey(key)) {
+        map[key] = CustomerCandidate(
+          name: name,
+          clientId: c.clientId,
+          phone: c.whatsappNumber,
+          address: '',
+          city: '',
+          state: c.state,
+          gstNumber: c.gstNumber,
+        );
+      }
+    }
+
+    return map.values.toList();
+  }
+
+  void _populateCustomerFields(CustomerCandidate c) {
+    if (!mounted) return;
+    setState(() {
+      if (c.name.isNotEmpty) _customerController.text = c.name;
+      if (c.clientId.isNotEmpty) _clientIdController.text = c.clientId;
+      if (c.phone.isNotEmpty) {
+        String cleanPhone = c.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        if (cleanPhone.length == 12 && cleanPhone.startsWith('91')) {
+          cleanPhone = cleanPhone.substring(2);
+        }
+        if (cleanPhone.length > 10) {
+          cleanPhone = cleanPhone.substring(cleanPhone.length - 10);
+        }
+        _whatsappController.text = cleanPhone;
+      }
+      _addressController.text = c.address;
+      _cityController.text = c.city;
+      _selectedState = c.state;
+      _gstNumberController.text = c.gstNumber;
+    });
+  }
+
+  void _generateClientId(String name) {
+    if (name.trim().isEmpty) return;
+
+    final query = name.trim().toLowerCase();
+    final candidates = _getAllCustomerCandidates();
+    final match = candidates.firstWhere(
+      (c) => c.name.trim().toLowerCase() == query,
+      orElse: () => CustomerCandidate(name: '', clientId: '', phone: ''),
+    );
+
+    if (match.name.isNotEmpty && (match.clientId.isNotEmpty || match.phone.isNotEmpty || match.address.isNotEmpty)) {
+      _populateCustomerFields(match);
+    } else {
+      // New Customer -> Generate unique ID only if user has not entered a custom client ID
+      final cleanName = name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
+      final prefix = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padRight(3, 'X');
+      final hash = name.hashCode.abs().toString().padRight(4, '0');
+      final suffix = hash.substring(hash.length - 4);
+      
+      setState(() {
+        _clientIdController.text = 'CLI-$prefix-$suffix';
+      });
+    }
+  }
+
   void _lookupClientByPhone(String phone) {
-    if (phone.length < 4) return; // Wait for at least 4 digits
-    
-    // Find client with this phone
-    // Normalize? For now exact match or contains
-    final existingBillIndex = _allBills.indexWhere((b) => b.whatsappNumber == phone || b.whatsappNumber.endsWith(phone));
-    
-    if (existingBillIndex != -1) {
-       final existing = _allBills[existingBillIndex];
-       if (mounted) {
-         setState(() {
-           // Only autofill if other fields are empty to avoid overwriting user edits
-           if (_customerController.text.isEmpty) _customerController.text = existing.customerName;
-           if (_clientIdController.text.isEmpty) _clientIdController.text = existing.clientId;
-           if (_addressController.text.isEmpty) _addressController.text = existing.clientAddress;
-           if (_cityController.text.isEmpty) _cityController.text = existing.clientCity ?? ''; // NEW
-           
-           if (_selectedState.isEmpty) _selectedState = existing.placeOfSupply;
-           if (_gstNumberController.text.isEmpty) _gstNumberController.text = existing.gstNumber ?? '';
-         });
-       }
+    final cleanDigits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanDigits.length < 4) return; // Wait for at least 4 digits
+
+    final candidates = _getAllCustomerCandidates();
+    final match = candidates.firstWhere(
+      (c) {
+        final candDigits = c.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        return candDigits.isNotEmpty && (candDigits == cleanDigits || candDigits.endsWith(cleanDigits));
+      },
+      orElse: () => CustomerCandidate(name: '', clientId: '', phone: ''),
+    );
+
+    if (match.name.isNotEmpty || match.clientId.isNotEmpty) {
+      _populateCustomerFields(match);
     }
   }
 
@@ -148,43 +261,48 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
     _debounce?.cancel(); // NEW
     _ewayBillNoController.dispose();
     _vehicleNoController.dispose();
+    _customerFocusNode.dispose();
+    _clientIdFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _initData() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      _allProducts = await _productService.getProducts();
-      _allBills = await _billsService.getUserRelevantBills(user.id);
-      
-      // Load Settings
-      _appSettings = await SettingsService().fetchSettings();
-      if (_appSettings != null) {
-        // Auto-populate GST if empty or '0'
-        if (_taxController.text.isEmpty || _taxController.text == '0') {
-           _taxController.text = _appSettings!.defaultGstRate.toStringAsFixed(0);
-        }
-      }
-      if (mounted) setState(() {});
-      
-      _generateInvoiceNumber();
-      _checkMouStatus();
+    final tenantId = ApiClient().currentTenantId;
+    final userId = ApiClient().currentUserId;
+    
+    _allProducts = await _productService.getProducts();
+    _allBills = await _billsService.getUserRelevantBills(userId.isNotEmpty ? userId : tenantId);
+    try {
+      _allClients = await ClientService().getClients();
+    } catch (_) {
+      _allClients = [];
     }
+    
+    // Load Settings
+    _appSettings = await SettingsService().fetchSettings();
+    if (_appSettings != null) {
+      // Auto-populate GST if empty or '0'
+      if (_taxController.text.isEmpty || _taxController.text == '0') {
+         _taxController.text = _appSettings!.defaultGstRate.toStringAsFixed(0);
+      }
+    }
+    if (mounted) setState(() {});
+    
+    _generateInvoiceNumber();
+    _checkMouStatus();
   }
 
   Future<void> _generateInvoiceNumber() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-       final nextInv = await SequenceService().peekNextInvoiceNumber(
-          user.id, 
-          _appSettings?.invoicePrefix ?? 'INV-', 
-          _appSettings?.invoiceStartNumber ?? 1,
-       );
-       if (mounted) {
-         setState(() {
-           _invoiceNoController.text = nextInv;
-         });
-       }
+    final tenantId = ApiClient().currentTenantId;
+    final nextInv = await SequenceService().peekNextInvoiceNumber(
+      tenantId, 
+      _appSettings?.invoicePrefix ?? 'INV-', 
+      _appSettings?.invoiceStartNumber ?? 1,
+    );
+    if (mounted) {
+      setState(() {
+        _invoiceNoController.text = nextInv;
+      });
     }
   }
 
@@ -213,48 +331,6 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
     return total;
   }
 
-
-  void _generateClientId(String name) {
-    if (name.isEmpty) {
-      if (mounted) {
-        setState(() {
-          // Don't clear everything effectively on backspace, irritating for user
-          // Just clear ID if empty
-          // _clientIdController.clear(); 
-        });
-      }
-      return;
-    }
-
-    // Check if customer already exists (Case Insensitive Match)
-    final existingBillIndex = _allBills.indexWhere((b) => b.customerName.toLowerCase() == name.toLowerCase());
-    
-    if (existingBillIndex != -1) {
-      // Found Existing Customer -> Autofill Details
-      final existing = _allBills[existingBillIndex];
-      setState(() {
-        _clientIdController.text = existing.clientId;
-        // User asked to "impliment the auto filling feature", so yes.
-        if (_whatsappController.text.isEmpty) _whatsappController.text = existing.whatsappNumber;
-        if (_addressController.text.isEmpty) _addressController.text = existing.clientAddress;
-        if (_cityController.text.isEmpty) _cityController.text = existing.clientCity ?? ''; // NEW
-        
-        // Auto-fill State and GST
-        _selectedState = existing.placeOfSupply;
-        _gstNumberController.text = existing.gstNumber ?? '';
-      });
-    } else {
-      // New Customer -> Generate ID
-      final cleanName = name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '').toUpperCase();
-      final prefix = cleanName.length >= 3 ? cleanName.substring(0, 3) : cleanName.padRight(3, 'X');
-      final hash = name.hashCode.abs().toString().padRight(4, '0');
-      final suffix = hash.substring(hash.length - 4);
-      
-      setState(() {
-        _clientIdController.text = 'CLI-$prefix-$suffix';
-      });
-    }
-  }
 
   void _addItem() {
     setState(() {
@@ -544,22 +620,25 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
       }
 
       // GENERATE FINAL INVOICE NUMBER ATOMICALLY
-      String finalInvoiceNumber = _invoiceNoController.text;
+      String finalInvoiceNumber = _invoiceNoController.text.trim();
       
       try {
-         final user = Supabase.instance.client.auth.currentUser;
-         if (user != null) {
-             final actualNumber = await SequenceService().getNextInvoiceNumber(
-                user.id, 
-                _appSettings?.invoicePrefix ?? 'INV-', 
-                _appSettings?.invoiceStartNumber ?? 1
-             );
-             finalInvoiceNumber = actualNumber; 
-         }
+        final tenantId = ApiClient().currentTenantId;
+        final actualNumber = await SequenceService().getNextInvoiceNumber(
+          tenantId, 
+          _appSettings?.invoicePrefix ?? 'INV-', 
+          _appSettings?.invoiceStartNumber ?? 1
+        );
+        if (actualNumber.isNotEmpty) {
+          finalInvoiceNumber = actualNumber;
+        }
       } catch (e) {
-         SnackbarHelper.showError(context, 'Failed to generate compliant invoice number. Please try again.');
-         setState(() => _isSaving = false);
-         return;
+        debugPrint('Failed to get sequence number: $e');
+      }
+
+      if (finalInvoiceNumber.isEmpty) {
+        final prefix = _appSettings?.invoicePrefix ?? 'INV-';
+        finalInvoiceNumber = '$prefix${DateTime.now().millisecondsSinceEpoch}';
       }
 
       final bill = BillModel(
@@ -600,6 +679,36 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
       );
 
       final newBillId = await _billsService.addBill(bill); // CHANGED: Returns ID
+
+      // Auto-save new customer to clients directory if not already present
+      try {
+        final existing = _getAllCustomerCandidates().any(
+          (c) => c.name.toLowerCase() == _customerController.text.trim().toLowerCase() ||
+                 (c.clientId.isNotEmpty && c.clientId == _clientIdController.text.trim()),
+        );
+        if (!existing && _customerController.text.trim().isNotEmpty) {
+          final newClient = ClientModel(
+            clientId: _clientIdController.text.trim(),
+            businessName: _customerController.text.trim(),
+            ownerName: _customerController.text.trim(),
+            email: '',
+            whatsappNumber: _whatsappController.text.trim(),
+            tenantId: ApiClient().currentTenantId,
+            state: _selectedState,
+            gstNumber: _gstNumberController.text.trim(),
+            license: LicenseModel(
+              isActive: true,
+              plan: 'trial',
+              startDate: DateTime.now(),
+              endDate: DateTime.now().add(const Duration(days: 365)),
+            ),
+            createdAt: DateTime.now(),
+          );
+          await ClientService().addClient(newClient);
+        }
+      } catch (e) {
+        debugPrint('Auto-saving new client error: $e');
+      }
 
       // STOCK DEDUCTION
       for (var item in items) {
@@ -680,19 +789,9 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
   }
 
   Future<void> _checkMouStatus() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      // Check if user is a client (by role in metadata or just try fetch client)
-       // Optimization: Only check if we suspect they are a client?
-       // For now, let's try to fetch client record.
-       final client = await ClientService().getClient(user.id);
-       
-       if (client != null) {
-          // It is a client
-          if (!client.mouAccepted) {
-            if (mounted) _showMouBlockDialog();
-          }
-       }
+    final client = await ClientService().getClientById(AuthService().currentTenantId);
+    if (client != null && !client.mouAccepted) {
+      if (mounted) _showMouBlockDialog();
     }
   }
 
@@ -783,11 +882,81 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                 child: Column(
                   children: [
                     // Customer Name with Autocomplete
-                    _buildTextField(
-                      _customerController, 
-                      AppLocalizations.of(context)?.customerNameLabel ?? 'Customer Name', 
-                      Icons.person_outline,
-                      validator: (value) => _customerController.text.isEmpty ? 'Required' : null,
+                    RawAutocomplete<CustomerCandidate>(
+                      textEditingController: _customerController,
+                      focusNode: _customerFocusNode,
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<CustomerCandidate>.empty();
+                        }
+                        final query = textEditingValue.text.toLowerCase().trim();
+                        final candidates = _getAllCustomerCandidates();
+                        return candidates.where((c) =>
+                          c.name.toLowerCase().contains(query) ||
+                          c.clientId.toLowerCase().contains(query) ||
+                          c.phone.contains(query)
+                        );
+                      },
+                      displayStringForOption: (CustomerCandidate option) => option.name,
+                      onSelected: (CustomerCandidate selection) {
+                        _populateCustomerFields(selection);
+                        _customerFocusNode.unfocus();
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)?.customerNameLabel ?? 'Customer Name',
+                            prefixIcon: const Icon(Icons.person_outline, color: AppColors.textGrey, size: 20),
+                            filled: true,
+                            fillColor: AppColors.background,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                          ),
+                          onChanged: (val) {
+                            // Only auto-generate ID if user has not picked a customer from autocomplete
+                            if (val.length >= 3 && _clientIdController.text.isEmpty) {
+                              _generateClientId(val);
+                            }
+                          },
+                          validator: (value) => _customerController.text.isEmpty ? 'Required' : null,
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            borderRadius: BorderRadius.circular(12),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 360),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final option = options.elementAt(index);
+                                  return ListTile(
+                                    dense: true,
+                                    leading: const CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: AppColors.background,
+                                      child: Icon(Icons.person, size: 16, color: AppColors.primary),
+                                    ),
+                                    title: Text(option.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    subtitle: Text(
+                                      'ID: ${option.clientId.isNotEmpty ? option.clientId : '-'} | Ph: ${option.phone.isNotEmpty ? option.phone : '-'}',
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
+                                    ),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 12),
@@ -805,63 +974,75 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                     const SizedBox(height: 12),
                     
                     // Client ID with Autocomplete
-                    _buildTextField(
-                      _clientIdController, 
-                      AppLocalizations.of(context)?.clientId ?? 'Client ID', 
-                      Icons.badge_outlined,
-                      readOnly: false,
+                    RawAutocomplete<CustomerCandidate>(
+                      textEditingController: _clientIdController,
+                      focusNode: _clientIdFocusNode,
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) {
+                          return const Iterable<CustomerCandidate>.empty();
+                        }
+                        final query = textEditingValue.text.toLowerCase().trim();
+                        final candidates = _getAllCustomerCandidates();
+                        return candidates.where((c) =>
+                          c.clientId.toLowerCase().contains(query) ||
+                          c.name.toLowerCase().contains(query)
+                        );
+                      },
+                      displayStringForOption: (CustomerCandidate option) => option.clientId,
+                      onSelected: (CustomerCandidate selection) {
+                        _populateCustomerFields(selection);
+                        _clientIdFocusNode.unfocus();
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)?.clientId ?? 'Client ID',
+                            prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.textGrey, size: 20),
+                            filled: true,
+                            fillColor: AppColors.background,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                          ),
+                          validator: (value) => _clientIdController.text.isEmpty ? 'Required' : null,
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            borderRadius: BorderRadius.circular(12),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 220, maxWidth: 360),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final option = options.elementAt(index);
+                                  return ListTile(
+                                    dense: true,
+                                    leading: const CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: AppColors.background,
+                                      child: Icon(Icons.badge, size: 16, color: AppColors.primary),
+                                    ),
+                                    title: Text(option.clientId, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    subtitle: Text(
+                                      '${option.name} | Ph: ${option.phone.isNotEmpty ? option.phone : "-" }',
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textGrey),
+                                    ),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    /*
-                          optionsBuilder: (TextEditingValue textEditingValue) {
-                            if (textEditingValue.text.isEmpty) {
-                              return const Iterable<BillModel>.empty();
-                            }
-                            final query = textEditingValue.text.toLowerCase();
-                            final seen = <String>{};
-                            return _allBills.where((bill) {
-                              final id = bill.clientId.toLowerCase();
-                              if (id.contains(query) && !seen.contains(id)) {
-                                seen.add(id);
-                                return true;
-                              }
-                              return false;
-                            });
-                          },
-                          displayStringForOption: (BillModel option) => option.clientId,
-                          onSelected: (BillModel selection) {
-                             setState(() {
-                              _clientIdController.text = selection.clientId;
-                              _customerController.text = selection.customerName; 
-                              _whatsappController.text = selection.whatsappNumber;
-                              _addressController.text = selection.clientAddress;
-                              _cityController.text = selection.clientCity ?? ''; // NEW
-                              
-                              _selectedState = selection.placeOfSupply;
-                              _gstNumberController.text = selection.gstNumber ?? '';
-                            });
-                          },
-                          fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                             if (textEditingController.text != _clientIdController.text) {
-                               textEditingController.value = textEditingController.value.copyWith(
-                                 text: _clientIdController.text,
-                                 selection: TextSelection.collapsed(offset: _clientIdController.text.length),
-                               );
-                             }
-                             return TextFormField(
-                                controller: textEditingController,
-                                focusNode: focusNode,
-                                onChanged: (val) => _clientIdController.text = val,
-                                decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context)?.clientId ?? 'Client ID',
-                                  prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.textGrey, size: 20),
-                                  filled: true,
-                                  fillColor: AppColors.background,
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
-                                ),
-                                validator: (value) => _clientIdController.text.isEmpty ? 'Required' : null,
-                             );
-*/
                     const SizedBox(height: 12),
                                           
                     // Address
@@ -931,7 +1112,6 @@ class _CreateBillScreenState extends State<CreateBillScreen> {
                       AppLocalizations.of(context)?.gstNumber ?? 'Client GSTIN (Optional)', 
                       Icons.assignment_outlined, 
                       textCapitalization: TextCapitalization.characters,
-                      validator: (val) => Validators.validateGSTIN(val, isOptional: true), // Purchaser Optional
                     ),
                     const SizedBox(height: 16),
 

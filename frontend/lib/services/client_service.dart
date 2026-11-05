@@ -71,6 +71,13 @@ class ClientService {
     await _fetchInitial();
   }
 
+  Future<List<ClientModel>> getClients() async {
+    if (_cachedClients.isEmpty) {
+      await _fetchInitial();
+    }
+    return List.unmodifiable(_cachedClients);
+  }
+
   Stream<List<ClientModel>> streamClients() {
     if (!_initialized) {
       _initialized = true;

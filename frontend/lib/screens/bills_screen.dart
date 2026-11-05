@@ -303,7 +303,9 @@ class _InvoicesListTabState extends State<InvoicesListTab> with AutomaticKeepAli
 
 
   void _checkMou(VoidCallback onAllowed) async {
-    if (widget.user != null && !widget.user!.mouAccepted) {
+    final user = await UserService().getUser(AuthService().currentUser?.id ?? '');
+    final isAccepted = user?.mouAccepted ?? widget.user?.mouAccepted ?? false;
+    if (!isAccepted) {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -315,22 +317,19 @@ class _InvoicesListTabState extends State<InvoicesListTab> with AutomaticKeepAli
               child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx, true);
-              },
+              onPressed: () => Navigator.pop(ctx, true),
               child: Text(AppLocalizations.of(context)?.reviewSign ?? 'Review & Sign'),
             ),
           ],
         ),
       );
-
       if (accepted == true && mounted) {
         final result = await Navigator.push<bool>(
           context,
           MaterialPageRoute(builder: (_) => const MouScreen()),
         );
         if (result == true) {
-          if (widget.onRefresh != null) widget.onRefresh!();
+          if (widget.onRefresh != null) await widget.onRefresh!();
         }
       }
     } else {

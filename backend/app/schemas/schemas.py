@@ -133,7 +133,13 @@ class BillCreate(BaseModel):
     payment_received_date: Optional[datetime] = None
     whatsapp_number: Optional[str] = ""
     client_address: Optional[str] = ""
+    client_city: Optional[str] = None
     gst_number: Optional[str] = None
+    eway_bill_no: Optional[str] = None
+    vehicle_no: Optional[str] = None
+    transport_mode: Optional[str] = None
+    shipping_address: Optional[str] = None
+    shipping_name: Optional[str] = None
     items: List[BillItemSchema] = []
     payments: List[PaymentRecordSchema] = []
     created_by: Optional[str] = None
@@ -155,7 +161,13 @@ class BillUpdate(BaseModel):
     payment_received_date: Optional[datetime] = None
     whatsapp_number: Optional[str] = None
     client_address: Optional[str] = None
+    client_city: Optional[str] = None
     gst_number: Optional[str] = None
+    eway_bill_no: Optional[str] = None
+    vehicle_no: Optional[str] = None
+    transport_mode: Optional[str] = None
+    shipping_address: Optional[str] = None
+    shipping_name: Optional[str] = None
     items: Optional[List[BillItemSchema]] = None
     payments: Optional[List[PaymentRecordSchema]] = None
 
